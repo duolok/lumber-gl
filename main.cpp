@@ -236,11 +236,25 @@ int main() {
         -0.96f, -0.45f, 0.0f,    0.812f, 0.075f, 0.212f,
     };
 
-    /*
-    float dogHouseRoof[] = {
+    float dog[] = {
+        -0.7f, -0.75f, 0.0f,      0.82f, 0.604f, 0.272f,
+        -0.68f, -0.75f, 0.0f,     0.82f, 0.604f, 0.272f,
+        -0.68f, -0.64f, 0.0f,     0.82f, 0.604f, 0.272f,
+
+        -0.7f,  -0.75f, 0.0f,    0.82f, 0.604, 0.272f,
+        -0.68f, -0.64f, 0.0f,    0.82f, 0.604f, 0.272f,
+        -0.7f,  -0.64f, 0.0f,    0.82f, 0.604f, 0.272f,
+
+
+        -0.62f, -0.75f, 0.0f,      0.82f, 0.604f, 0.272f,
+        -0.60f, -0.75f, 0.0f,     0.82f, 0.604f, 0.272f,
+        -0.60f, -0.64f, 0.0f,     0.82f, 0.604f, 0.272f,
+
+        -0.62f,  -0.75f, 0.0f,    0.82f, 0.604, 0.272f,
+        -0.60f, -0.64f, 0.0f,    0.82f, 0.604f, 0.272f,
+        -0.62f,  -0.64f, 0.0f,    0.82f, 0.604f, 0.272f,
 
     };
-    */
 
     float rectangleVertices[] = {
         -1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f, 
@@ -628,6 +642,23 @@ int main() {
 
     glBindVertexArray(0);
 
+    unsigned int dogVAO, dogVBO;
+    glGenVertexArrays(1, &dogVAO);
+    glGenBuffers(1, &dogVBO);
+
+    glBindVertexArray(dogVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, dogVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(dog), dog, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
 
     int uH = SCR_HEIGHT;
     glUseProgram(shaderProgram);
@@ -741,16 +772,60 @@ int main() {
         glBindVertexArray(doghouseroofVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
+        glUniform1f(isFenceLoc, GL_FALSE);
+        glBindVertexArray(dogVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 12);
+
+
 
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
 
-    glDeleteVertexArrays(1, &triangleVAO);
-    glDeleteBuffers(1, &triangleVBO);
     glDeleteVertexArrays(1, &rectangleVAO);
     glDeleteBuffers(1, &rectangleVBO);
+    glDeleteVertexArrays(1, &housebaseVAO);
+    glDeleteBuffers(1, &housebaseVBO);
+    glDeleteVertexArrays(1, &firstfloorVAO);
+    glDeleteBuffers(1, &firstfloorVBO);
+    glDeleteVertexArrays(1, &firstroofVAO);
+    glDeleteBuffers(1, &firstroofVBO);
+    glDeleteVertexArrays(1, &secondfloorVAO);
+    glDeleteBuffers(1, &secondfloorVBO);
+    glDeleteVertexArrays(1, &secondroofVAO);
+    glDeleteBuffers(1, &secondroofVBO);
+    glDeleteVertexArrays(1, &secondroofleftVAO);
+    glDeleteBuffers(1, &secondroofleftVBO);
+    glDeleteVertexArrays(1, &secondroofrightVAO);
+    glDeleteBuffers(1, &secondroofrightVBO);
+    glDeleteVertexArrays(1, &chimneyVAO);
+    glDeleteBuffers(1, &chimneyVBO);
+    glDeleteVertexArrays(1, &doorVAO);
+    glDeleteBuffers(1, &doorVBO);
+    glDeleteVertexArrays(1, &handleVAO);
+    glDeleteBuffers(1, &handleVBO);
+    glDeleteVertexArrays(1, &win1VAO);
+    glDeleteBuffers(1, &win1VBO);
+    glDeleteVertexArrays(1, &win2VAO);
+    glDeleteBuffers(1, &win2VBO);
+    glDeleteVertexArrays(1, &win3VAO);
+    glDeleteBuffers(1, &win3VBO);
+    glDeleteVertexArrays(1, &win4VAO);
+    glDeleteBuffers(1, &win4VBO);
+    glDeleteVertexArrays(1, &win5VAO);
+    glDeleteBuffers(1, &win5VBO);
+    glDeleteVertexArrays(1, &win6VAO);
+    glDeleteBuffers(1, &win6VBO);
+    glDeleteVertexArrays(1, &win7VAO);
+    glDeleteBuffers(1, &win7VBO);
+    glDeleteVertexArrays(1, &doghousebaseVAO);
+    glDeleteBuffers(1, &doghousebaseVBO);
+    glDeleteVertexArrays(1, &doghouseroofVAO);
+    glDeleteBuffers(1, &doghouseroofVBO);
+    glDeleteVertexArrays(1, &dogVAO);
+    glDeleteBuffers(1, &dogVBO);
     glDeleteProgram(shaderProgram);
+
     glfwTerminate();
     return 0;
 }
