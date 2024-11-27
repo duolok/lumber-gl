@@ -1,23 +1,35 @@
 #define _CRT_SECURE_NO_WARNINGS
+#define M_PI 3.14159265358979323846
+#define ELLIPSE_SEGMENTS 50
 
 #include <iostream>
 #include <fstream>
 #include <sstream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <algorithm>
+#include <cmath>
+
+using namespace std;
 
 // Constants
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 const char* WINDOW_TITLE = "LumberGL";
 
+float paintProgress = 0.0f; 
+
 // Function declarations
 unsigned int compileShader(GLenum shaderType, const char* source);
 unsigned int createShaderProgram(const char* vertexShaderSource, const char* fragmentShaderSource);
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
+void updateTreeBaseColors(float* treeBase, unsigned int VBO, float paintProgress);
+float clip(float n, float lower, float upper);
 
 int main() {
+
+
     // Initialize GLFW
     if (!glfwInit()) {
         std::cerr << "Failed to initialize GLFW\n";
@@ -226,6 +238,18 @@ int main() {
       -0.95f, -0.55f, 0.0f,       0.278f, 0.204, 0.145f,
 };
 
+	float treeBase[] = {
+		0.95f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
+		0.85f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
+		0.87f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
+
+		0.87f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
+		0.93f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
+		0.95f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
+		};
+
+
+
     float dogHouseRoof[] = {
         -0.96f, -0.55f, 0.0f,      0.812f, 0.075f, 0.212f,
         -0.79f, -0.55f, 0.0f,      0.812f, 0.075f, 0.212f,
@@ -235,6 +259,33 @@ int main() {
         -0.79f, -0.45f, 0.0f,    0.812f, 0.075f, 0.212f,
         -0.96f, -0.45f, 0.0f,    0.812f, 0.075f, 0.212f,
     };
+
+    float ellipseVertices[(ELLIPSE_SEGMENTS + 2) * 6] = {}; 
+    float centerX = 0.9f;
+    float centerY = -0.1f;
+    float radiusX = 0.09f;
+    float radiusY = 0.4f;
+    float r = 0.192f, g = 0.42f, b = 0.161f;
+
+    // Add the center vertex first
+    ellipseVertices[0] = centerX;
+    ellipseVertices[1] = centerY;
+    ellipseVertices[2] = 0.0f; 
+    ellipseVertices[3] = r;
+    ellipseVertices[4] = g;
+    ellipseVertices[5] = b;
+
+    for (int i = 0; i <= ELLIPSE_SEGMENTS; ++i) {
+        float theta = 2.0f * M_PI * float(i) / float(ELLIPSE_SEGMENTS);
+
+        ellipseVertices[(i + 1) * 6] = centerX + radiusX * cos(theta);
+        ellipseVertices[(i + 1) * 6 + 1] = centerY + radiusY * sin(theta);
+        ellipseVertices[(i + 1) * 6 + 2] = 0.0f; 
+        ellipseVertices[(i + 1) * 6 + 3] = r;
+        ellipseVertices[(i + 1) * 6 + 4] = g;
+        ellipseVertices[(i + 1) * 6 + 5] = b;
+    }
+
 
     float dog[] = {
         // left leg
@@ -301,6 +352,9 @@ int main() {
         -0.538f,  -0.595f,  0.0f,   0.949f, 0.749f, 0.941f,
         -0.538f,  -0.618f,  0.0f,   0.949f, 0.749f, 0.941f,
     };
+
+
+
 
     float rectangleVertices[] = {
         -1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f, 
@@ -705,6 +759,40 @@ int main() {
 
     glBindVertexArray(0);
 
+    unsigned int treebaseVAO, treebaseVBO;
+    glGenVertexArrays(1, &treebaseVAO);
+    glGenBuffers(1, &treebaseVBO);
+
+    glBindVertexArray(treebaseVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, treebaseVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(treeBase), treeBase, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+    unsigned int ellipseVAO, ellipseVBO;
+    glGenVertexArrays(1, &ellipseVAO);
+    glGenBuffers(1, &ellipseVBO);
+
+    glBindVertexArray(ellipseVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, ellipseVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(ellipseVertices), ellipseVertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); // Position
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); // Color
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+
 
     int uH = SCR_HEIGHT;
     glUseProgram(shaderProgram);
@@ -715,6 +803,7 @@ int main() {
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
+        updateTreeBaseColors(treeBase, treebaseVBO, paintProgress);
 
         // Render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
@@ -822,7 +911,13 @@ int main() {
         glBindVertexArray(dogVAO);
         glDrawArrays(GL_TRIANGLES, 0, 42);
 
+        glUniform1f(isFenceLoc, GL_FALSE);
+        glBindVertexArray(treebaseVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
+        glUniform1f(isFenceLoc, GL_FALSE);
+        glBindVertexArray(ellipseVAO);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, ELLIPSE_SEGMENTS + 2);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -862,6 +957,10 @@ int main() {
     glDeleteBuffers(1, &win5VBO);
     glDeleteVertexArrays(1, &win6VAO);
     glDeleteBuffers(1, &win6VBO);
+    glDeleteVertexArrays(1, &treebaseVBO);
+    glDeleteBuffers(1, &treebaseVBO);
+    glDeleteVertexArrays(1, &ellipseVBO);
+    glDeleteBuffers(1, &ellipseVBO);
     glDeleteVertexArrays(1, &win7VAO);
     glDeleteBuffers(1, &win7VBO);
     glDeleteVertexArrays(1, &doghousebaseVAO);
@@ -945,8 +1044,49 @@ void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, true);
     }
+    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+        paintProgress += 0.1f; // Increment progress
+        if (paintProgress > 1.0f) paintProgress = 1.0f; // Clamp to max
+
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        paintProgress -= 0.1f; // Decrement progress
+        if (paintProgress < 0.0f) paintProgress = 0.0f; // Clamp to min
+    }
 }
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
+}
+
+void updateTreeBaseColors(float* treeBase, unsigned int VBO, float paintProgress) {
+    float originalColor[3] = { 0.22f, 0.169f, 0.1f }; // Brown
+    float whiteColor[3] = { 1.0f, 1.0f, 1.0f };       // White
+
+    for (int i = 0; i < 6; ++i) { // Iterate through vertices in `treeBase`
+        float yPos = treeBase[i * 6 + 1]; // Get the y-coordinate
+        float progress = (yPos + 0.75f) / 0.3f; // Normalize y (-0.75 to -0.45 -> 0 to 1 range)
+
+        // Update vertex colors based on progress and paintProgress
+        if (progress <= paintProgress) {
+            for (int j = 0; j < 3; ++j) {
+                treeBase[i * 6 + 3 + j] = originalColor[j] * (1.0f - progress) + whiteColor[j] * progress;
+            }
+        }
+        else {
+            for (int j = 0; j < 3; ++j) {
+                treeBase[i * 6 + 3 + j] = originalColor[j]; // Reset to original color
+            }
+        }
+    }
+
+    // Update the VBO with the new colors
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * 6 * 6, treeBase);
+}
+
+
+float clip(float n, float lower, float upper) {
+    return std::max(lower, std::min(n, upper));
 }
