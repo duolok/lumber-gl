@@ -1045,20 +1045,19 @@ void processInput(GLFWwindow* window) {
         glfwSetWindowShouldClose(window, true);
     }
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        paintProgress += 0.1f; // Increment progress
-        if (paintProgress > 1.0f) paintProgress = 1.0f; // Clamp to max
-
+        paintProgress += 0.01f; // Increment progress
+        paintProgress = clip(paintProgress, 0.0f, 1.0f);
     }
-
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        paintProgress -= 0.1f; // Decrement progress
-        if (paintProgress < 0.0f) paintProgress = 0.0f; // Clamp to min
+        paintProgress -= 0.01f; // Decrement progress
+        paintProgress = clip(paintProgress, 0.0f, 1.0f);
     }
 }
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
     glViewport(0, 0, width, height);
 }
+
 
 void updateTreeBaseColors(float* treeBase, unsigned int VBO, float paintProgress) {
     float originalColor[3] = { 0.22f, 0.169f, 0.1f }; // Brown
@@ -1068,16 +1067,15 @@ void updateTreeBaseColors(float* treeBase, unsigned int VBO, float paintProgress
         float yPos = treeBase[i * 6 + 1]; // Get the y-coordinate
         float progress = (yPos + 0.75f) / 0.3f; // Normalize y (-0.75 to -0.45 -> 0 to 1 range)
 
-        // Update vertex colors based on progress and paintProgress
-        if (progress <= paintProgress) {
-            for (int j = 0; j < 3; ++j) {
-                treeBase[i * 6 + 3 + j] = originalColor[j] * (1.0f - progress) + whiteColor[j] * progress;
-            }
-        }
-        else {
-            for (int j = 0; j < 3; ++j) {
-                treeBase[i * 6 + 3 + j] = originalColor[j]; // Reset to original color
-            }
+        // Adjust for bottom-to-top painting (remove inversion)
+        // progress is directly proportional to height, no need for 1.0f - progress.
+
+        // Calculate blendFactor that builds up over multiple presses
+        float blendFactor = clip(paintProgress - progress, 0.0f, 1.0f);
+
+        for (int j = 0; j < 3; ++j) {
+            // Gradual accumulation of whiteness with more presses
+            treeBase[i * 6 + 3 + j] = originalColor[j] * (1.0f - blendFactor) + whiteColor[j] * blendFactor;
         }
     }
 
@@ -1085,7 +1083,6 @@ void updateTreeBaseColors(float* treeBase, unsigned int VBO, float paintProgress
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * 6 * 6, treeBase);
 }
-
 
 float clip(float n, float lower, float upper) {
     return std::max(lower, std::min(n, upper));
