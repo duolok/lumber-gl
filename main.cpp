@@ -1060,21 +1060,17 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 
 
 void updateTreeBaseColors(float* treeBase, unsigned int VBO, float paintProgress) {
-    float originalColor[3] = { 0.22f, 0.169f, 0.1f }; // Brown
-    float whiteColor[3] = { 1.0f, 1.0f, 1.0f };       // White
+    float originalColor[3] = { 0.22f, 0.169f, 0.1f }; 
+    float whiteColor[3] = { 1.0f, 1.0f, 1.0f };      
 
-    for (int i = 0; i < 6; ++i) { // Iterate through vertices in `treeBase`
-        float yPos = treeBase[i * 6 + 1]; // Get the y-coordinate
-        float progress = (yPos + 0.75f) / 0.3f; // Normalize y (-0.75 to -0.45 -> 0 to 1 range)
+    for (int i = 0; i < 6; ++i) { 
+        float yPos = treeBase[i * 6 + 1]; 
+        float progress = (yPos + 0.75f) / 0.3f; // normalize y (-0.75 to -0.45 -> 0 to 1 range)
 
-        // Adjust for bottom-to-top painting (remove inversion)
-        // progress is directly proportional to height, no need for 1.0f - progress.
-
-        // Calculate blendFactor that builds up over multiple presses
         float blendFactor = clip(paintProgress - progress, 0.0f, 1.0f);
 
         for (int j = 0; j < 3; ++j) {
-            // Gradual accumulation of whiteness with more presses
+            // gradual accumulation 
             treeBase[i * 6 + 3 + j] = originalColor[j] * (1.0f - blendFactor) + whiteColor[j] * blendFactor;
         }
     }
