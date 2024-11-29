@@ -66,6 +66,16 @@ int main() {
          0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,
     };
 
+    float sky[] = {
+		-1.0f, 0.0f, 0.0f, 0.412f, 0.737f, 0.851f,
+		1.0f, 0.0f, 0.0f,  0.412f, 0.737f, 0.851f,
+		1.0f, 1.0f, 0.0f,  0.412f, 0.737f, 0.851f,
+
+		1.0f, 1.0f, 0.0f,  0.412f, 0.737f, 0.851f,
+		-1.0f, 1.0f, 0.0f, 0.412f, 0.737f, 0.851f,
+		-1.0f, 0.0f, 0.0f, 0.412f, 0.737f, 0.851f,
+    };
+
     float houseBase[] = {
         -0.3f, -0.5f , 0.0f,      0.196f, 0.204f, 0.22f,
          0.3f, -0.5f , 0.0f,      0.196f, 0.204f, 0.22f,
@@ -784,10 +794,26 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, ellipseVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(ellipseVertices), ellipseVertices, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); // Position
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); // Color
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); 
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+    unsigned int skyVAO, skyVBO;
+    glGenVertexArrays(1, &skyVAO);
+    glGenBuffers(1, &skyVBO);
+
+    glBindVertexArray(skyVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(sky), sky, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); 
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); 
     glEnableVertexAttribArray(1);
 
     glBindVertexArray(0);
@@ -808,6 +834,10 @@ int main() {
         // Render
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        glUniform1f(isFenceLoc, GL_FALSE);
+        glBindVertexArray(skyVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
 
         // Draw the rectangle
         glUniform1f(isFenceLoc, GL_TRUE);
@@ -925,6 +955,8 @@ int main() {
 
     glDeleteVertexArrays(1, &rectangleVAO);
     glDeleteBuffers(1, &rectangleVBO);
+    glDeleteVertexArrays(1, &skyVAO);
+    glDeleteBuffers(1, &skyVBO);
     glDeleteVertexArrays(1, &housebaseVAO);
     glDeleteBuffers(1, &housebaseVBO);
     glDeleteVertexArrays(1, &firstfloorVAO);
