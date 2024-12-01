@@ -9,6 +9,7 @@ uniform float dim;
 
 
 void main() {
+vec3 color = ourColor * dim;
 
 	if (isFence) {
 		int stripeHeight = uH / 12;
@@ -19,8 +20,8 @@ void main() {
 				discard;
 			}
 		} else {
-			FragColor = vec4(1.0f, 1.0f, 1.0f, 1.0f);
+			FragColor = vec4(color, 1.0f);
 		}
 	}
-	FragColor = vec4(ourColor, 1.0f);
+	FragColor = vec4(color, 1.0f);
 }
