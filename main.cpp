@@ -14,21 +14,32 @@ using namespace std;
 
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
+const int NUM_SMOKE_PARTICLES = 50;
 const char* WINDOW_TITLE = "LumberGL";
 
-float paintProgress = 0.0f; 
+const float transitionDuration = 5.0f; 
 bool isDay = true;
 bool keyPressed = false;
+bool transitionInProgress = false;
+bool dogGoingLeft = false;
+float paintProgress = 0.0f; 
 float timeOfDay = 0.3f;
 float dimFactor = 1.0f;
-bool transitionInProgress = false;
 float transitionStartTime = 0.0f;
-const float transitionDuration = 5.0f; 
 float sunMoonProgress = 0.0f; 
 float skyColor[3] = { 0.412f, 0.737f, 0.851f };
 float daySkyColor[3] = { 0.412f, 0.737f, 0.851f }; 
 float nightSkyColor[3] = { 0.0f, 0.0f, 0.1f };     
 float objectDimFactor = 1.0f;
+float dogSpeed = 0.003f;
+float dogX = 0.0f;
+float dogY = 0.0f;
+float dogMinX = -0.1f;
+float dogMaxX =  1.3f;
+float smokeX[NUM_SMOKE_PARTICLES];
+float smokeY[NUM_SMOKE_PARTICLES];
+float chimneyX = 0.125f;
+float chimneyY = 0.33f;
 
 unsigned int compileShader(GLenum shaderType, const char* source);
 unsigned int createShaderProgram(const char* vertexShaderSource, const char* fragmentShaderSource);
@@ -75,6 +86,8 @@ int main() {
 
     unsigned int shaderProgram = createShaderProgram("basic.vert", "basic.frag");
     unsigned int sunShader = createShaderProgram("sun.vert", "sun.frag");
+    unsigned int dogShader = createShaderProgram("dog.vert", "dog.frag");
+    unsigned int smokeShader = createShaderProgram("smoke.vert", "smoke.frag");
 
     float triangleVertices[] = {
          0.0f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f, 
@@ -255,6 +268,16 @@ int main() {
         0.15f,  0.33f,   0.0f,       0.812f, 0.075f, 0.212f,
     };
 
+    float chimneySmoke[] = {
+        0.13f, 0.33f, 0.0f,          0.341f, 0.341f, 0.341f,
+        0.12f, 0.33f, 0.0f,          0.341f, 0.341f, 0.341f,
+        0.12f, 0.38f, 0.0f,          0.341f, 0.341f, 0.341f,
+
+        0.13f, 0.33f, 0.0f,          0.341f, 0.341f, 0.341f,
+        0.12f, 0.38f, 0.0f,          0.341f, 0.341f, 0.341f,
+        0.13f, 0.38f, 0.0f,          0.341f, 0.341f, 0.341f,
+    };
+
     float dogHouseBase[] = {
        -0.95f, -0.75f , 0.0f,     0.278f, 0.204, 0.145f,
        -0.8f, -0.75f , 0.0f,      0.278f, 0.204, 0.145f,
@@ -379,8 +402,22 @@ int main() {
         -0.538f,  -0.618f,  0.0f,   0.949f, 0.749f, 0.941f,
     };
 
+    unsigned int dogVAO, dogVBO;
+    glGenVertexArrays(1, &dogVAO);
+    glGenBuffers(1, &dogVBO);
 
+    glBindVertexArray(dogVAO);
 
+    glBindBuffer(GL_ARRAY_BUFFER, dogVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(dog), dog, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
 
     float rectangleVertices[] = {
         -1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f, 
@@ -799,23 +836,6 @@ int main() {
 
     glBindVertexArray(0);
 
-    unsigned int dogVAO, dogVBO;
-    glGenVertexArrays(1, &dogVAO);
-    glGenBuffers(1, &dogVBO);
-
-    glBindVertexArray(dogVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, dogVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(dog), dog, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
     unsigned int treebaseVAO, treebaseVBO;
     glGenVertexArrays(1, &treebaseVAO);
     glGenBuffers(1, &treebaseVBO);
@@ -848,6 +868,29 @@ int main() {
     glEnableVertexAttribArray(1);
 
     glBindVertexArray(0);
+
+    unsigned int smokeVAO, smokeVBO, offsetVBO;
+    glGenVertexArrays(1, &smokeVAO);
+    glGenBuffers(1, &smokeVBO);
+    glGenBuffers(1, &offsetVBO);
+
+    glBindVertexArray(smokeVAO);
+
+    // Square VBO
+    glBindBuffer(GL_ARRAY_BUFFER, smokeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(chimneySmoke), chimneySmoke, GL_STATIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    // Offset VBO
+    glBindBuffer(GL_ARRAY_BUFFER, offsetVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float)* NUM_SMOKE_PARTICLES * 2, nullptr, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+    glVertexAttribDivisor(1, 1);
+
+    glBindVertexArray(0);
+
 
     unsigned int skyVAO, skyVBO;
     glGenVertexArrays(1, &skyVAO);
@@ -1046,10 +1089,6 @@ int main() {
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
         glUniform1f(isFenceLoc, GL_FALSE);
-        glBindVertexArray(dogVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 42);
-
-        glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(treebaseVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
@@ -1061,11 +1100,41 @@ int main() {
         glBindVertexArray(moonVAO); 
         glDrawArrays(GL_TRIANGLE_FAN, 0, ELLIPSE_SEGMENTS + 2); 
 
-
         glUseProgram(sunShader);
         glUniform1f(glGetUniformLocation(sunShader, "time"), glfwGetTime());
         glBindVertexArray(sunVAO);
         glDrawArrays(GL_TRIANGLE_FAN, 0, ELLIPSE_SEGMENTS + 2);
+
+        glUseProgram(dogShader);
+        glUniform2f(glGetUniformLocation(dogShader, "uPos"), dogX, dogY);
+        glUniform1i(glGetUniformLocation(dogShader, "uFlip"), dogGoingLeft);
+        glBindVertexArray(dogVAO);
+        glDrawArrays(GL_TRIANGLES, 0, 42); // Updated count to match the number of vertices
+        glBindVertexArray(0);
+        glUseProgram(0);
+
+        glUseProgram(smokeShader);
+        for (int i = 0; i < NUM_SMOKE_PARTICLES; ++i) {
+            smokeY[i] += 0.001f; 
+
+            if (smokeY[i] > 1.0f) { 
+                smokeY[i] = chimneyY;
+            }
+        }
+
+        // Update offsets on the GPU
+        float offsets[NUM_SMOKE_PARTICLES * 2];
+        for (int i = 0; i < NUM_SMOKE_PARTICLES; ++i) {
+            offsets[i * 2 + 1] = smokeY[i];
+        }
+        glBindBuffer(GL_ARRAY_BUFFER, offsetVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(offsets), offsets);
+
+        glUseProgram(smokeShader);
+        glBindVertexArray(smokeVAO);
+        glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 6, NUM_SMOKE_PARTICLES);
+        glBindVertexArray(0);
+        glUseProgram(0);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -1211,6 +1280,21 @@ void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_RELEASE) {
         keyPressed = false; 
     }
+    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        dogX -= dogSpeed;
+        if (dogX < dogMinX) {
+            dogX = dogMinX;
+        }
+        dogGoingLeft = true;
+
+    }
+    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+        dogX += dogSpeed;
+        if (dogX > dogMaxX) {
+            dogX = dogMaxX;
+        }
+        dogGoingLeft = false;
+    }
 }
 
 void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
@@ -1257,7 +1341,6 @@ void updateSunMoonPositionOnToggle(bool isDay, float& sunX, float& sunY, float& 
 void calculateSunMoonPosition(float progress, float& sunX, float& sunY, float& moonX, float& moonY) {
     float sunStartX, sunStartY, sunEndX, sunEndY;
     float moonStartX, moonStartY, moonEndX, moonEndY;
-    cout << "isDay: " << isDay << endl;
     if (isDay) {
         sunStartX = -0.8f;
         sunStartY = 0.8f;
