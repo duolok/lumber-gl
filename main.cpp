@@ -26,6 +26,8 @@ float transitionStartTime = 0.0f;
 const float transitionDuration = 5.0f; 
 float sunMoonProgress = 0.0f; 
 float skyColor[3] = { 0.412f, 0.737f, 0.851f };
+float daySkyColor[3] = { 0.412f, 0.737f, 0.851f }; 
+float nightSkyColor[3] = { 0.0f, 0.0f, 0.1f };     
 float objectDimFactor = 1.0f;
 
 unsigned int compileShader(GLenum shaderType, const char* source);
@@ -37,6 +39,8 @@ void calculateSunMoonPosition(float progress, float& sunX, float& sunY, float& m
 void updateCircleVertices(float* vertices, float centerX, float centerY, float radius, float* color);
 void updateDayNightCycle(float& timeOfDay, float* skyColor, float& objectDimFactor, bool& isDay);
 float clip(float n, float lower, float upper);
+
+
 
 int main() {
 
@@ -865,9 +869,11 @@ int main() {
     int uH = SCR_HEIGHT;
     int uHLoc = glGetUniformLocation(shaderProgram, "uH");
     int isFenceLoc = glGetUniformLocation(shaderProgram, "isFence");
+    int dimLoc = glGetUniformLocation(shaderProgram, "dim");
 
     glUniform1i(uHLoc, uH); 
-    glUseProgram(sunShader);
+    glUseProgram(shaderProgram);
+    glUniform1f(dimLoc, dimFactor);
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
@@ -878,23 +884,32 @@ int main() {
             sunMoonProgress = (currentTime - transitionStartTime) / transitionDuration;
             if (sunMoonProgress >= 1.0f) {
                 sunMoonProgress = 1.0f;
-                transitionInProgress = false; // transition complete
+                transitionInProgress = false; 
+                isDay = !isDay;
             }
         }
         else {
-            sunMoonProgress = isDay ? 0.0f : 1.0f;
+            sunMoonProgress = 0.0f;
         }
 
-        float sunAngleStart = isDay ? 0.0f : M_PI; // Start angle
-        float sunAngleEnd = isDay ? M_PI : 0.0f;   // End angle
-        float sunAngle = sunAngleStart + (sunAngleEnd - sunAngleStart) * sunMoonProgress;
+        if (isDay) { dimFactor = 1.0f - 0.5f * sunMoonProgress; }
+        else { dimFactor = 0.5f + 0.5f * sunMoonProgress; }
+
 
         calculateSunMoonPosition(sunMoonProgress, sunX, sunY, moonX, moonY);
-        dimFactor = 1.0f - 0.8f * sunMoonProgress; 
 
-        skyColor[0] = 0.412f * (1.0f - sunMoonProgress) + 0.0f * sunMoonProgress;
-        skyColor[1] = 0.737f * (1.0f - sunMoonProgress) + 0.0f * sunMoonProgress;
-        skyColor[2] = 0.851f * (1.0f - sunMoonProgress) + 0.0f * sunMoonProgress;
+		float sunAngleStart = isDay ? 0.0f : M_PI; // Start angle
+		float sunAngleEnd = isDay ? M_PI : 0.0f;   // End angle
+		float sunAngle = sunAngleStart + (sunAngleEnd - sunAngleStart) * sunMoonProgress;
+
+        for (int i = 0; i < 3; ++i) {
+            if (isDay) {
+                skyColor[i] = daySkyColor[i] * (1.0f - sunMoonProgress) + nightSkyColor[i] * sunMoonProgress;
+            }
+            else {
+                skyColor[i] = nightSkyColor[i] * (1.0f - sunMoonProgress) + daySkyColor[i] * sunMoonProgress;
+            }
+        }
 
         for (int i = 0; i < 6; ++i) {
             sky[i * 6 + 3] = skyColor[0];
@@ -904,6 +919,14 @@ int main() {
 
         glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(sky), sky);
+
+
+
+        glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(sky), sky);
+
+		glBindBuffer(GL_ARRAY_BUFFER, housebaseVBO);
+		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(houseBase), houseBase);
 
         updateCircleVertices(sunVertices, sunX, sunY, 0.1f, sunColor);
         updateCircleVertices(moonVertices, moonX, moonY, 0.1f, moonColor);
@@ -1181,8 +1204,7 @@ void processInput(GLFWwindow* window) {
         paintProgress = clip(paintProgress, 0.0f, 1.0f);
     }
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !keyPressed) {
-        keyPressed = true; // mark the key as pressed
-        isDay = !isDay;    // toggle day/night
+        keyPressed = true; 
         transitionInProgress = true;
         transitionStartTime = glfwGetTime();
         cout << "Toggled day/night: " << (isDay ? "Day" : "Night") << endl;
@@ -1236,7 +1258,7 @@ void updateSunMoonPositionOnToggle(bool isDay, float& sunX, float& sunY, float& 
 void calculateSunMoonPosition(float progress, float& sunX, float& sunY, float& moonX, float& moonY) {
     float sunStartX, sunStartY, sunEndX, sunEndY;
     float moonStartX, moonStartY, moonEndX, moonEndY;
-
+    cout << "isDay: " << isDay << endl;
     if (isDay) {
         sunStartX = -0.8f;
         sunStartY = 0.8f;
@@ -1249,18 +1271,17 @@ void calculateSunMoonPosition(float progress, float& sunX, float& sunY, float& m
         moonEndY = 0.8f;
     }
     else {
-        sunStartX = -0.8f;
-        sunStartY = 0.8f;
-        sunEndX = 1.2f;
-        sunEndY = 0.6f;
+        moonStartX = -0.8f;
+        moonStartY = 0.8f;
+        moonEndX = 1.2f;
+        moonEndY = 0.6f;
 
-        moonStartX = -1.2f;
-        moonStartY = 0.6f;
-        moonEndX = -0.8f;
-        moonEndY = 0.8f;
+        sunStartX = -1.2f;
+        sunStartY = 0.6f;
+        sunEndX = -0.8f;
+        sunEndY = 0.8f;
     }
 
-    // Linear interpolation based on progress
     sunX = sunStartX + (sunEndX - sunStartX) * progress;
     sunY = sunStartY + (sunEndY - sunStartY) * progress;
 
@@ -1287,7 +1308,6 @@ void updateCircleVertices(float* vertices, float centerX, float centerY, float r
         vertices[(i + 1) * 6 + 5] = color[2];
     }
 }
-
 
 float clip(float n, float lower, float upper) {
     return std::max(lower, std::min(n, upper));
