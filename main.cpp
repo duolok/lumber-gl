@@ -921,7 +921,6 @@ int main() {
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(sky), sky);
 
 
-
         glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(sky), sky);
 
