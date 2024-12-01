@@ -5,8 +5,11 @@ out vec4 FragColor;
 
 uniform int uH;
 uniform bool isFence;
+uniform float dim;
+
 
 void main() {
+
 	if (isFence) {
 		int stripeHeight = uH / 12;
 		if (mod(gl_FragCoord.y, 10) < 8) {
