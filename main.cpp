@@ -12,19 +12,30 @@
 
 using namespace std;
 
-// Constants
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 const char* WINDOW_TITLE = "LumberGL";
 
 float paintProgress = 0.0f; 
+bool isDay = true;
+bool keyPressed = false;
+float timeOfDay = 0.3f;
+float dimFactor = 1.0f;
+bool transitionInProgress = false;
+float transitionStartTime = 0.0f;
+const float transitionDuration = 5.0f; 
+float sunMoonProgress = 0.0f; 
+float skyColor[3] = { 0.412f, 0.737f, 0.851f };
+float objectDimFactor = 1.0f;
 
-// Function declarations
 unsigned int compileShader(GLenum shaderType, const char* source);
 unsigned int createShaderProgram(const char* vertexShaderSource, const char* fragmentShaderSource);
 void framebufferSizeCallback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow* window);
 void updateTreeBaseColors(float* treeBase, unsigned int VBO, float paintProgress);
+void calculateSunMoonPosition(float progress, float& sunX, float& sunY, float& moonX, float& moonY);
+void updateCircleVertices(float* vertices, float centerX, float centerY, float radius, float* color);
+void updateDayNightCycle(float& timeOfDay, float* skyColor, float& objectDimFactor, bool& isDay);
 float clip(float n, float lower, float upper);
 
 int main() {
@@ -59,6 +70,7 @@ int main() {
     }
 
     unsigned int shaderProgram = createShaderProgram("basic.vert", "basic.frag");
+    unsigned int sunShader = createShaderProgram("sun.vert", "sun.frag");
 
     float triangleVertices[] = {
          0.0f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f, 
@@ -375,6 +387,37 @@ int main() {
          1.0f, -0.8f, 0.0f,   1.0f, 1.0f, 1.0f,
         -1.0f, -0.8f, 0.0f,   1.0f, 1.0f, 1.0f  
     };
+
+
+    float sunVertices[(ELLIPSE_SEGMENTS + 2) * 6];
+    float moonVertices[(ELLIPSE_SEGMENTS + 2) * 6];
+    float sunColor[3] = { 1.0f, 1.0f, 0.0f }; 
+    float moonColor[3] = { 0.8f, 0.8f, 0.8f }; 
+
+    unsigned int sunVAO, sunVBO;
+    unsigned int moonVAO, moonVBO;
+
+    // Generate and bind buffers for sun
+    glGenVertexArrays(1, &sunVAO);
+    glGenBuffers(1, &sunVBO);
+    glBindVertexArray(sunVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, sunVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(sunVertices), sunVertices, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    // Generate and bind buffers for moon
+    glGenVertexArrays(1, &moonVAO);
+    glGenBuffers(1, &moonVBO);
+    glBindVertexArray(moonVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, moonVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(moonVertices), moonVertices, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
     unsigned int triangleVAO, triangleVBO;
     glGenVertexArrays(1, &triangleVAO);
@@ -818,22 +861,65 @@ int main() {
 
     glBindVertexArray(0);
 
-
-
+	float sunX, sunY, moonX, moonY;
     int uH = SCR_HEIGHT;
-    glUseProgram(shaderProgram);
     int uHLoc = glGetUniformLocation(shaderProgram, "uH");
     int isFenceLoc = glGetUniformLocation(shaderProgram, "isFence");
+
     glUniform1i(uHLoc, uH); 
-    glUseProgram(shaderProgram);
+    glUseProgram(sunShader);
 
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
         updateTreeBaseColors(treeBase, treebaseVBO, paintProgress);
 
-        // Render
+        if (transitionInProgress) {
+            float currentTime = glfwGetTime();
+            sunMoonProgress = (currentTime - transitionStartTime) / transitionDuration;
+            if (sunMoonProgress >= 1.0f) {
+                sunMoonProgress = 1.0f;
+                transitionInProgress = false; // transition complete
+            }
+        }
+        else {
+            sunMoonProgress = isDay ? 0.0f : 1.0f;
+        }
+
+        float sunAngleStart = isDay ? 0.0f : M_PI; // Start angle
+        float sunAngleEnd = isDay ? M_PI : 0.0f;   // End angle
+        float sunAngle = sunAngleStart + (sunAngleEnd - sunAngleStart) * sunMoonProgress;
+
+        calculateSunMoonPosition(sunMoonProgress, sunX, sunY, moonX, moonY);
+        dimFactor = 1.0f - 0.8f * sunMoonProgress; 
+
+        skyColor[0] = 0.412f * (1.0f - sunMoonProgress) + 0.0f * sunMoonProgress;
+        skyColor[1] = 0.737f * (1.0f - sunMoonProgress) + 0.0f * sunMoonProgress;
+        skyColor[2] = 0.851f * (1.0f - sunMoonProgress) + 0.0f * sunMoonProgress;
+
+        for (int i = 0; i < 6; ++i) {
+            sky[i * 6 + 3] = skyColor[0];
+            sky[i * 6 + 4] = skyColor[1];
+            sky[i * 6 + 5] = skyColor[2];
+        }
+
+        glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(sky), sky);
+
+        updateCircleVertices(sunVertices, sunX, sunY, 0.1f, sunColor);
+        updateCircleVertices(moonVertices, moonX, moonY, 0.1f, moonColor);
+
+        glBindBuffer(GL_ARRAY_BUFFER, sunVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(sunVertices), sunVertices);
+
+        glBindBuffer(GL_ARRAY_BUFFER, moonVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(moonVertices), moonVertices);
+
+        // Clear screen
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
+
+        // Use shader program
+		glUseProgram(shaderProgram);
 
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(skyVAO);
@@ -947,6 +1033,16 @@ int main() {
 
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(ellipseVAO);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, ELLIPSE_SEGMENTS + 2);
+
+        glUniform1f(isFenceLoc, GL_FALSE);
+        glBindVertexArray(moonVAO); 
+        glDrawArrays(GL_TRIANGLE_FAN, 0, ELLIPSE_SEGMENTS + 2); 
+
+
+        glUseProgram(sunShader);
+        glUniform1f(glGetUniformLocation(sunShader, "time"), glfwGetTime());
+        glBindVertexArray(sunVAO);
         glDrawArrays(GL_TRIANGLE_FAN, 0, ELLIPSE_SEGMENTS + 2);
 
         glfwSwapBuffers(window);
@@ -1077,12 +1173,22 @@ void processInput(GLFWwindow* window) {
         glfwSetWindowShouldClose(window, true);
     }
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        paintProgress += 0.01f; // Increment progress
+        paintProgress += 0.01f; 
         paintProgress = clip(paintProgress, 0.0f, 1.0f);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        paintProgress -= 0.01f; // Decrement progress
+        paintProgress -= 0.01f; 
         paintProgress = clip(paintProgress, 0.0f, 1.0f);
+    }
+    if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !keyPressed) {
+        keyPressed = true; // mark the key as pressed
+        isDay = !isDay;    // toggle day/night
+        transitionInProgress = true;
+        transitionStartTime = glfwGetTime();
+        cout << "Toggled day/night: " << (isDay ? "Day" : "Night") << endl;
+    }
+    if (glfwGetKey(window, GLFW_KEY_N) == GLFW_RELEASE) {
+        keyPressed = false; 
     }
 }
 
@@ -1102,15 +1208,86 @@ void updateTreeBaseColors(float* treeBase, unsigned int VBO, float paintProgress
         float blendFactor = clip(paintProgress - progress, 0.0f, 1.0f);
 
         for (int j = 0; j < 3; ++j) {
-            // gradual accumulation 
             treeBase[i * 6 + 3 + j] = originalColor[j] * (1.0f - blendFactor) + whiteColor[j] * blendFactor;
         }
     }
 
-    // Update the VBO with the new colors
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * 6 * 6, treeBase);
 }
+
+void updateSunMoonPositionOnToggle(bool isDay, float& sunX, float& sunY, float& moonX, float& moonY) {
+    float radius = 1.1f; // Circular orbit radius
+    if (isDay) {
+        sunX = 0.8f;
+        sunY = radius;
+        moonX = -0.8f;
+        moonY = -radius;
+    }
+    else {
+        // Moon at the top
+        sunX = 0.0f;
+        sunY = -radius;
+        moonX = 0.0f;
+        moonY = radius;
+    }
+}
+
+void calculateSunMoonPosition(float progress, float& sunX, float& sunY, float& moonX, float& moonY) {
+    float sunStartX, sunStartY, sunEndX, sunEndY;
+    float moonStartX, moonStartY, moonEndX, moonEndY;
+
+    if (isDay) {
+        sunStartX = -0.8f;
+        sunStartY = 0.8f;
+        sunEndX = 1.2f;
+        sunEndY = 0.6f;
+
+        moonStartX = -1.2f;
+        moonStartY = 0.6f;
+        moonEndX = -0.8f;
+        moonEndY = 0.8f;
+    }
+    else {
+        sunStartX = -0.8f;
+        sunStartY = 0.8f;
+        sunEndX = 1.2f;
+        sunEndY = 0.6f;
+
+        moonStartX = -1.2f;
+        moonStartY = 0.6f;
+        moonEndX = -0.8f;
+        moonEndY = 0.8f;
+    }
+
+    // Linear interpolation based on progress
+    sunX = sunStartX + (sunEndX - sunStartX) * progress;
+    sunY = sunStartY + (sunEndY - sunStartY) * progress;
+
+    moonX = moonStartX + (moonEndX - moonStartX) * progress;
+    moonY = moonStartY + (moonEndY - moonStartY) * progress;
+}
+
+
+void updateCircleVertices(float* vertices, float centerX, float centerY, float radius, float* color) {
+    vertices[0] = centerX;
+    vertices[1] = centerY;
+    vertices[2] = 0.0f;
+    vertices[3] = color[0];
+    vertices[4] = color[1];
+    vertices[5] = color[2];
+
+    for (int i = 0; i <= ELLIPSE_SEGMENTS; ++i) {
+        float theta = 2.0f * M_PI * float(i) / float(ELLIPSE_SEGMENTS);
+        vertices[(i + 1) * 6] = centerX + radius * cos(theta);
+        vertices[(i + 1) * 6 + 1] = centerY + radius * sin(theta);
+        vertices[(i + 1) * 6 + 2] = 0.0f;
+        vertices[(i + 1) * 6 + 3] = color[0];
+        vertices[(i + 1) * 6 + 4] = color[1];
+        vertices[(i + 1) * 6 + 5] = color[2];
+    }
+}
+
 
 float clip(float n, float lower, float upper) {
     return std::max(lower, std::min(n, upper));
