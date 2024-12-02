@@ -2,5 +2,5 @@
 out vec4 FragColor;
 
 void main() {
-    FragColor = vec4(0.8, 0.8, 0.8, 0.5); // Light gray, semi-transparent smoke
+    FragColor = vec4(0.7, 0.7, 0.7, 1.0);
 }
