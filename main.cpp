@@ -1083,7 +1083,6 @@ int main() {
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(doghousebaseVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
-
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(doghouseroofVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1109,7 +1108,7 @@ int main() {
         glUniform2f(glGetUniformLocation(dogShader, "uPos"), dogX, dogY);
         glUniform1i(glGetUniformLocation(dogShader, "uFlip"), dogGoingLeft);
         glBindVertexArray(dogVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 42); // Updated count to match the number of vertices
+        glDrawArrays(GL_TRIANGLES, 0, 42); 
         glBindVertexArray(0);
         glUseProgram(0);
 
