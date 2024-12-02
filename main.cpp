@@ -51,8 +51,6 @@ void updateCircleVertices(float* vertices, float centerX, float centerY, float r
 void updateDayNightCycle(float& timeOfDay, float* skyColor, float& objectDimFactor, bool& isDay);
 float clip(float n, float lower, float upper);
 
-
-
 int main() {
 
 
@@ -269,14 +267,15 @@ int main() {
     };
 
     float chimneySmoke[] = {
-        0.13f, 0.33f, 0.0f,          0.341f, 0.341f, 0.341f,
-        0.12f, 0.33f, 0.0f,          0.341f, 0.341f, 0.341f,
-        0.12f, 0.38f, 0.0f,          0.341f, 0.341f, 0.341f,
+        0.24f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f, 
+        0.24f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f,
+        0.13f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f,
 
-        0.13f, 0.33f, 0.0f,          0.341f, 0.341f, 0.341f,
-        0.12f, 0.38f, 0.0f,          0.341f, 0.341f, 0.341f,
-        0.13f, 0.38f, 0.0f,          0.341f, 0.341f, 0.341f,
+        0.13f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f,
+        0.13f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f, 
+        0.24f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f,
     };
+
 
     float dogHouseBase[] = {
        -0.95f, -0.75f , 0.0f,     0.278f, 0.204, 0.145f,
@@ -296,8 +295,6 @@ int main() {
 		0.93f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
 		0.95f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
 		};
-
-
 
     float dogHouseRoof[] = {
         -0.96f, -0.55f, 0.0f,      0.812f, 0.075f, 0.212f,
@@ -869,25 +866,19 @@ int main() {
 
     glBindVertexArray(0);
 
-    unsigned int smokeVAO, smokeVBO, offsetVBO;
+    unsigned int smokeVAO, smokeVBO;
     glGenVertexArrays(1, &smokeVAO);
     glGenBuffers(1, &smokeVBO);
-    glGenBuffers(1, &offsetVBO);
 
     glBindVertexArray(smokeVAO);
-
-    // Square VBO
     glBindBuffer(GL_ARRAY_BUFFER, smokeVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(chimneySmoke), chimneySmoke, GL_STATIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); 
     glEnableVertexAttribArray(0);
 
-    // Offset VBO
-    glBindBuffer(GL_ARRAY_BUFFER, offsetVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(float)* NUM_SMOKE_PARTICLES * 2, nullptr, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); 
     glEnableVertexAttribArray(1);
-    glVertexAttribDivisor(1, 1);
 
     glBindVertexArray(0);
 
@@ -1113,27 +1104,16 @@ int main() {
         glUseProgram(0);
 
         glUseProgram(smokeShader);
-        for (int i = 0; i < NUM_SMOKE_PARTICLES; ++i) {
-            smokeY[i] += 0.001f; 
+        float currentTime = glfwGetTime();
+        glUniform1f(glGetUniformLocation(smokeShader, "uTime"), currentTime);
+        glUniform2f(glGetUniformLocation(smokeShader, "uOrigin"), 0.125f, 0.33f);
 
-            if (smokeY[i] > 1.0f) { 
-                smokeY[i] = chimneyY;
-            }
-        }
-
-        // Update offsets on the GPU
-        float offsets[NUM_SMOKE_PARTICLES * 2];
-        for (int i = 0; i < NUM_SMOKE_PARTICLES; ++i) {
-            offsets[i * 2 + 1] = smokeY[i];
-        }
-        glBindBuffer(GL_ARRAY_BUFFER, offsetVBO);
-        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(offsets), offsets);
-
-        glUseProgram(smokeShader);
+        // Draw smoke
         glBindVertexArray(smokeVAO);
-        glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 6, NUM_SMOKE_PARTICLES);
+        glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
-        glUseProgram(0);
+
+
 
         glfwSwapBuffers(window);
         glfwPollEvents();
