@@ -7,37 +7,41 @@
 #include <sstream>
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <ft2build.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include <algorithm>
+#include <map>
 #include <cmath>
+#include FT_FREETYPE_H
 
 using namespace std;
 
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
-const int NUM_SMOKE_PARTICLES = 50;
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 720;
 const char* WINDOW_TITLE = "LumberGL";
+const char* infoText = "Dusan Lecic SV80/2021";
 
-const float transitionDuration = 5.0f; 
+const float transitionDuration = 5.0f;
 bool isDay = true;
 bool keyPressed = false;
 bool transitionInProgress = false;
 bool dogGoingLeft = false;
-float paintProgress = 0.0f; 
+float paintProgress = 0.0f;
 float timeOfDay = 0.3f;
 float dimFactor = 1.0f;
 float transitionStartTime = 0.0f;
-float sunMoonProgress = 0.0f; 
+float sunMoonProgress = 0.0f;
 float skyColor[3] = { 0.412f, 0.737f, 0.851f };
-float daySkyColor[3] = { 0.412f, 0.737f, 0.851f }; 
-float nightSkyColor[3] = { 0.0f, 0.0f, 0.1f };     
+float daySkyColor[3] = { 0.412f, 0.737f, 0.851f };
+float nightSkyColor[3] = { 0.0f, 0.0f, 0.1f };
 float objectDimFactor = 1.0f;
 float dogSpeed = 0.003f;
 float dogX = 0.0f;
 float dogY = 0.0f;
 float dogMinX = -0.1f;
-float dogMaxX =  1.3f;
-float smokeX[NUM_SMOKE_PARTICLES];
-float smokeY[NUM_SMOKE_PARTICLES];
+float dogMaxX = 1.3f;
 float chimneyX = 0.125f;
 float chimneyY = 0.33f;
 
@@ -49,10 +53,23 @@ void updateTreeBaseColors(float* treeBase, unsigned int VBO, float paintProgress
 void calculateSunMoonPosition(float progress, float& sunX, float& sunY, float& moonX, float& moonY);
 void updateCircleVertices(float* vertices, float centerX, float centerY, float radius, float* color);
 void updateDayNightCycle(float& timeOfDay, float* skyColor, float& objectDimFactor, bool& isDay);
+void RenderTopRightText(unsigned int textShader, const std::string& text, float yOffset, float scale, glm::vec3 color);
+void RenderText(unsigned int shader, std::string text, float x, float y, float scale, glm::vec3 color);
+float CalculateTextWidth(const std::string& text, float scale);
 float clip(float n, float lower, float upper);
 
-int main() {
+struct Character {
+    GLuint TextureID;
+    glm::ivec2 Size;
+    glm::ivec2 Bearing;
+    unsigned int Advance;
+};
 
+std::map<char, Character> Characters;
+
+unsigned int textVAO, textVBO;
+
+int main() {
 
     // Initialize GLFW
     if (!glfwInit()) {
@@ -82,25 +99,85 @@ int main() {
         return 3;
     }
 
+    // Initialize FreeType
+    FT_Library ft;
+    if (FT_Init_FreeType(&ft))
+    {
+        std::cout << "ERROR::FREETYPE: Could not init FreeType Library" << std::endl;
+        return -1;
+    }
+
+    FT_Face face;
+    if (FT_New_Face(ft, "fonts/ComicMono.ttf", 0, &face))
+    {
+        std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
+        return -1;
+    }
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    FT_Set_Pixel_Sizes(face, 0, 20);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+
+    for (unsigned char c = 0; c < 200; c++) {
+        if (FT_Load_Char(face, c, FT_LOAD_RENDER)) {
+            std::cerr << "Failed to load Glyph" << std::endl;
+            continue;
+        }
+
+        GLuint texture;
+        glGenTextures(1, &texture);
+
+        glBindTexture(GL_TEXTURE_2D, texture);
+        glTexImage2D(
+            GL_TEXTURE_2D,
+            0,
+            GL_RED,
+            face->glyph->bitmap.width,
+            face->glyph->bitmap.rows,
+            0,
+            GL_RED,
+            GL_UNSIGNED_BYTE,
+            face->glyph->bitmap.buffer
+        );
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+
+        Character character = {
+            texture,
+            glm::ivec2(face->glyph->bitmap.width, face->glyph->bitmap.rows),
+            glm::ivec2(face->glyph->bitmap_left, face->glyph->bitmap_top),
+            face->glyph->advance.x
+        };
+        Characters.insert(std::pair<char, Character>(c, character));
+    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+
     unsigned int shaderProgram = createShaderProgram("basic.vert", "basic.frag");
     unsigned int sunShader = createShaderProgram("sun.vert", "sun.frag");
     unsigned int dogShader = createShaderProgram("dog.vert", "dog.frag");
     unsigned int smokeShader = createShaderProgram("smoke.vert", "smoke.frag");
+    unsigned int textShader = createShaderProgram("text.vert", "text.frag");
+
 
     float triangleVertices[] = {
-         0.0f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f, 
+         0.0f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,
         -0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
          0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,
     };
 
     float sky[] = {
-		-1.0f, 0.0f, 0.0f, 0.412f, 0.737f, 0.851f,
-		1.0f, 0.0f, 0.0f,  0.412f, 0.737f, 0.851f,
-		1.0f, 1.0f, 0.0f,  0.412f, 0.737f, 0.851f,
+        -1.0f, 0.0f, 0.0f, 0.412f, 0.737f, 0.851f,
+        1.0f, 0.0f, 0.0f,  0.412f, 0.737f, 0.851f,
+        1.0f, 1.0f, 0.0f,  0.412f, 0.737f, 0.851f,
 
-		1.0f, 1.0f, 0.0f,  0.412f, 0.737f, 0.851f,
-		-1.0f, 1.0f, 0.0f, 0.412f, 0.737f, 0.851f,
-		-1.0f, 0.0f, 0.0f, 0.412f, 0.737f, 0.851f,
+        1.0f, 1.0f, 0.0f,  0.412f, 0.737f, 0.851f,
+        -1.0f, 1.0f, 0.0f, 0.412f, 0.737f, 0.851f,
+        -1.0f, 0.0f, 0.0f, 0.412f, 0.737f, 0.851f,
     };
 
     float houseBase[] = {
@@ -177,7 +254,7 @@ int main() {
         0.02f, -0.36f, 0.0f,   0.196f, 0.204f, 0.22f,
         0.03f, -0.38f, 0.0f,     0.196f, 0.204f, 0.22f,
         0.03f, -0.36f, 0.0f,     0.196f, 0.204f, 0.22f,
-   };
+    };
 
 
     float firstRoof[] = {
@@ -230,29 +307,29 @@ int main() {
          0.08f,  0.1f, 0.0f,    1.0f, 1.0f, 1.0f,
     };
 
-	float secondFloorExtension[] = {
-		-0.16f,  0.15f, 0.0f,    0.51f, 0.604f, 0.8f,  
-		 0.16f,  0.15f, 0.0f,    0.51f, 0.604f, 0.8f, 
-		 0.0f,   0.3f,  0.0f,    0.51f, 0.604f, 0.8f,
-	};
+    float secondFloorExtension[] = {
+        -0.16f,  0.15f, 0.0f,    0.51f, 0.604f, 0.8f,
+         0.16f,  0.15f, 0.0f,    0.51f, 0.604f, 0.8f,
+         0.0f,   0.3f,  0.0f,    0.51f, 0.604f, 0.8f,
+    };
 
     float secondRoofLeft[] = {
         -0.20f,  0.20f, 0.0f,      0.812f, 0.075f, 0.212f,
-		 0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f, 
-		 0.0f,  0.39f,  0.0f,      0.812f, 0.075f, 0.212f, 
+         0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f,
+         0.0f,  0.39f,  0.0f,      0.812f, 0.075f, 0.212f,
 
-		 0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f, 
-        -0.16f,  0.15f, 0.0f,      0.812f, 0.075f, 0.212f, 
+         0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f,
+        -0.16f,  0.15f, 0.0f,      0.812f, 0.075f, 0.212f,
         -0.20f,  0.20f, 0.0f,      0.812f, 0.075f, 0.212f,
     };
 
     float secondRoofRight[] = {
          0.20f,  0.20f, 0.0f,      0.812f, 0.075f, 0.212f,
-		 0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f, 
-		 0.0f,  0.39f,  0.0f,      0.812f, 0.075f, 0.212f, 
+         0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f,
+         0.0f,  0.39f,  0.0f,      0.812f, 0.075f, 0.212f,
 
-		 0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f, 
-         0.16f,  0.15f, 0.0f,      0.812f, 0.075f, 0.212f, 
+         0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f,
+         0.16f,  0.15f, 0.0f,      0.812f, 0.075f, 0.212f,
          0.20f,  0.20f, 0.0f,      0.812f, 0.075f, 0.212f,
     };
 
@@ -267,12 +344,12 @@ int main() {
     };
 
     float chimneySmoke[] = {
-        0.24f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f, 
+        0.24f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f,
         0.24f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f,
         0.13f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f,
 
         0.13f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f,
-        0.13f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f, 
+        0.13f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f,
         0.24f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f,
     };
 
@@ -284,17 +361,17 @@ int main() {
        -0.95f, -0.75f , 0.0f,     0.278f, 0.204, 0.145f,
        -0.8f, -0.55f, 0.0f,       0.278f, 0.204, 0.145f,
       -0.95f, -0.55f, 0.0f,       0.278f, 0.204, 0.145f,
-};
+    };
 
-	float treeBase[] = {
-		0.95f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
-		0.85f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
-		0.87f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
+    float treeBase[] = {
+        0.95f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
+        0.85f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
+        0.87f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
 
-		0.87f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
-		0.93f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
-		0.95f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
-		};
+        0.87f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
+        0.93f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
+        0.95f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
+    };
 
     float dogHouseRoof[] = {
         -0.96f, -0.55f, 0.0f,      0.812f, 0.075f, 0.212f,
@@ -306,7 +383,7 @@ int main() {
         -0.96f, -0.45f, 0.0f,    0.812f, 0.075f, 0.212f,
     };
 
-    float ellipseVertices[(ELLIPSE_SEGMENTS + 2) * 6] = {}; 
+    float ellipseVertices[(ELLIPSE_SEGMENTS + 2) * 6] = {};
     float centerX = 0.9f;
     float centerY = -0.1f;
     float radiusX = 0.09f;
@@ -316,7 +393,7 @@ int main() {
     // Add the center vertex first
     ellipseVertices[0] = centerX;
     ellipseVertices[1] = centerY;
-    ellipseVertices[2] = 0.0f; 
+    ellipseVertices[2] = 0.0f;
     ellipseVertices[3] = r;
     ellipseVertices[4] = g;
     ellipseVertices[5] = b;
@@ -326,7 +403,7 @@ int main() {
 
         ellipseVertices[(i + 1) * 6] = centerX + radiusX * cos(theta);
         ellipseVertices[(i + 1) * 6 + 1] = centerY + radiusY * sin(theta);
-        ellipseVertices[(i + 1) * 6 + 2] = 0.0f; 
+        ellipseVertices[(i + 1) * 6 + 2] = 0.0f;
         ellipseVertices[(i + 1) * 6 + 3] = r;
         ellipseVertices[(i + 1) * 6 + 4] = g;
         ellipseVertices[(i + 1) * 6 + 5] = b;
@@ -417,20 +494,20 @@ int main() {
     glBindVertexArray(0);
 
     float rectangleVertices[] = {
-        -1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f, 
+        -1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f,
          1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f,
          1.0f, -0.8f, 0.0f,   1.0f, 1.0f, 1.0f,
 
-        -1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f, 
+        -1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f,
          1.0f, -0.8f, 0.0f,   1.0f, 1.0f, 1.0f,
-        -1.0f, -0.8f, 0.0f,   1.0f, 1.0f, 1.0f  
+        -1.0f, -0.8f, 0.0f,   1.0f, 1.0f, 1.0f
     };
 
 
     float sunVertices[(ELLIPSE_SEGMENTS + 2) * 6];
     float moonVertices[(ELLIPSE_SEGMENTS + 2) * 6];
-    float sunColor[3] = { 1.0f, 1.0f, 0.0f }; 
-    float moonColor[3] = { 0.8f, 0.8f, 0.8f }; 
+    float sunColor[3] = { 1.0f, 1.0f, 0.0f };
+    float moonColor[3] = { 0.8f, 0.8f, 0.8f };
 
     unsigned int sunVAO, sunVBO;
     unsigned int moonVAO, moonVBO;
@@ -472,7 +549,7 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    glBindVertexArray(0); 
+    glBindVertexArray(0);
 
     // Setup rectangle VAO and VBO
     unsigned int rectangleVAO, rectangleVBO;
@@ -490,7 +567,7 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    glBindVertexArray(0); 
+    glBindVertexArray(0);
 
     // housebase
     unsigned int housebaseVAO, housebaseVBO;
@@ -508,7 +585,7 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    glBindVertexArray(0); 
+    glBindVertexArray(0);
 
     // first Floor
     unsigned int firstfloorVAO, firstfloorVBO;
@@ -526,7 +603,7 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    glBindVertexArray(0); 
+    glBindVertexArray(0);
 
     // first roof
     unsigned int firstroofVAO, firstroofVBO;
@@ -544,7 +621,7 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    glBindVertexArray(0); 
+    glBindVertexArray(0);
 
 
     // second floor
@@ -563,7 +640,7 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    glBindVertexArray(0); 
+    glBindVertexArray(0);
 
 
     // second floor extension
@@ -584,7 +661,7 @@ int main() {
 
     glBindVertexArray(0);
 
-	// Second Roof Left
+    // Second Roof Left
     unsigned int secondroofleftVAO, secondroofleftVBO;
     glGenVertexArrays(1, &secondroofleftVAO);
     glGenBuffers(1, &secondroofleftVBO);
@@ -635,7 +712,7 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    glBindVertexArray(0); 
+    glBindVertexArray(0);
 
 
     // Door
@@ -654,7 +731,7 @@ int main() {
     glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
-    glBindVertexArray(0); 
+    glBindVertexArray(0);
 
 
     // Door
@@ -861,7 +938,7 @@ int main() {
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
     glBindVertexArray(0);
@@ -874,10 +951,10 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, smokeVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(chimneySmoke), chimneySmoke, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); 
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
     glBindVertexArray(0);
@@ -891,21 +968,36 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(sky), sky, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); 
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); 
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
 
     glBindVertexArray(0);
 
-	float sunX, sunY, moonX, moonY;
+
+    glGenVertexArrays(1, &textVAO);
+    glGenBuffers(1, &textVBO);
+
+    glBindVertexArray(textVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(float) * 6 * 4, NULL, GL_DYNAMIC_DRAW);
+
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 4 * sizeof(float), 0);
+
+    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    glBindVertexArray(0);
+
+
+    float sunX, sunY, moonX, moonY;
     int uH = SCR_HEIGHT;
     int uHLoc = glGetUniformLocation(shaderProgram, "uH");
     int isFenceLoc = glGetUniformLocation(shaderProgram, "isFence");
     int dimLoc = glGetUniformLocation(shaderProgram, "dim");
 
-    glUniform1i(uHLoc, uH); 
+    glUniform1i(uHLoc, uH);
     glUseProgram(shaderProgram);
     glUniform1f(dimLoc, dimFactor);
 
@@ -918,7 +1010,7 @@ int main() {
             sunMoonProgress = (currentTime - transitionStartTime) / transitionDuration;
             if (sunMoonProgress >= 1.0f) {
                 sunMoonProgress = 1.0f;
-                transitionInProgress = false; 
+                transitionInProgress = false;
                 isDay = !isDay;
             }
         }
@@ -932,9 +1024,9 @@ int main() {
 
         calculateSunMoonPosition(sunMoonProgress, sunX, sunY, moonX, moonY);
 
-		float sunAngleStart = isDay ? 0.0f : M_PI; // Start angle
-		float sunAngleEnd = isDay ? M_PI : 0.0f;   // End angle
-		float sunAngle = sunAngleStart + (sunAngleEnd - sunAngleStart) * sunMoonProgress;
+        float sunAngleStart = isDay ? 0.0f : M_PI; // Start angle
+        float sunAngleEnd = isDay ? M_PI : 0.0f;   // End angle
+        float sunAngle = sunAngleStart + (sunAngleEnd - sunAngleStart) * sunMoonProgress;
 
         for (int i = 0; i < 3; ++i) {
             if (isDay) {
@@ -958,8 +1050,8 @@ int main() {
         glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(sky), sky);
 
-		glBindBuffer(GL_ARRAY_BUFFER, housebaseVBO);
-		glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(houseBase), houseBase);
+        glBindBuffer(GL_ARRAY_BUFFER, housebaseVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(houseBase), houseBase);
 
         updateCircleVertices(sunVertices, sunX, sunY, 0.1f, sunColor);
         updateCircleVertices(moonVertices, moonX, moonY, 0.1f, moonColor);
@@ -970,78 +1062,62 @@ int main() {
         glBindBuffer(GL_ARRAY_BUFFER, moonVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(moonVertices), moonVertices);
 
-        // Clear screen
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // Use shader program
-		glUseProgram(shaderProgram);
-
+        glUseProgram(shaderProgram);
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(skyVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // Draw the rectangle
         glUniform1f(isFenceLoc, GL_TRUE);
         glBindVertexArray(rectangleVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // Draw house base
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(housebaseVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // Draw house first floor
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(firstfloorVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // Draw house first roof
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(firstroofVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // Draw house first roof
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(secondfloorVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // Draw second floor extension (triangle)
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(secondroofVAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        // Draw second roof left 
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(secondroofleftVAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        // Draw second roof left
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(secondroofleftVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // Draw second roof right
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(secondroofrightVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // Draw chimney
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(chimneyVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // Draw door
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(doorVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
 
-        // Draw door handle
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(handleVAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        // Draw windows
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(win1VAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -1087,8 +1163,8 @@ int main() {
         glDrawArrays(GL_TRIANGLE_FAN, 0, ELLIPSE_SEGMENTS + 2);
 
         glUniform1f(isFenceLoc, GL_FALSE);
-        glBindVertexArray(moonVAO); 
-        glDrawArrays(GL_TRIANGLE_FAN, 0, ELLIPSE_SEGMENTS + 2); 
+        glBindVertexArray(moonVAO);
+        glDrawArrays(GL_TRIANGLE_FAN, 0, ELLIPSE_SEGMENTS + 2);
 
         glUseProgram(sunShader);
         glUniform1f(glGetUniformLocation(sunShader, "time"), glfwGetTime());
@@ -1099,7 +1175,7 @@ int main() {
         glUniform2f(glGetUniformLocation(dogShader, "uPos"), dogX, dogY);
         glUniform1i(glGetUniformLocation(dogShader, "uFlip"), dogGoingLeft);
         glBindVertexArray(dogVAO);
-        glDrawArrays(GL_TRIANGLES, 0, 42); 
+        glDrawArrays(GL_TRIANGLES, 0, 42);
         glBindVertexArray(0);
         glUseProgram(0);
 
@@ -1107,13 +1183,14 @@ int main() {
         float currentTime = glfwGetTime();
         glUniform1f(glGetUniformLocation(smokeShader, "uTime"), currentTime);
         glUniform2f(glGetUniformLocation(smokeShader, "uOrigin"), 0.125f, 0.33f);
-
-        // Draw smoke
         glBindVertexArray(smokeVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
 
-
+        glUseProgram(textShader);
+        glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
+        glUniformMatrix4fv(glGetUniformLocation(textShader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+		RenderTopRightText(textShader, infoText, 50.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -1243,21 +1320,21 @@ void processInput(GLFWwindow* window) {
         glfwSetWindowShouldClose(window, true);
     }
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-        paintProgress += 0.01f; 
+        paintProgress += 0.01f;
         paintProgress = clip(paintProgress, 0.0f, 1.0f);
     }
     if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        paintProgress -= 0.01f; 
+        paintProgress -= 0.01f;
         paintProgress = clip(paintProgress, 0.0f, 1.0f);
     }
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !keyPressed) {
-        keyPressed = true; 
+        keyPressed = true;
         transitionInProgress = true;
         transitionStartTime = glfwGetTime();
         cout << "Toggled day/night: " << (isDay ? "Day" : "Night") << endl;
     }
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_RELEASE) {
-        keyPressed = false; 
+        keyPressed = false;
     }
     if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
         dogX -= dogSpeed;
@@ -1282,11 +1359,11 @@ void framebufferSizeCallback(GLFWwindow* window, int width, int height) {
 
 
 void updateTreeBaseColors(float* treeBase, unsigned int VBO, float paintProgress) {
-    float originalColor[3] = { 0.22f, 0.169f, 0.1f }; 
-    float whiteColor[3] = { 1.0f, 1.0f, 1.0f };      
+    float originalColor[3] = { 0.22f, 0.169f, 0.1f };
+    float whiteColor[3] = { 1.0f, 1.0f, 1.0f };
 
-    for (int i = 0; i < 6; ++i) { 
-        float yPos = treeBase[i * 6 + 1]; 
+    for (int i = 0; i < 6; ++i) {
+        float yPos = treeBase[i * 6 + 1];
         float progress = (yPos + 0.75f) / 0.3f; // normalize y (-0.75 to -0.45 -> 0 to 1 range)
 
         float blendFactor = clip(paintProgress - progress, 0.0f, 1.0f);
@@ -1370,6 +1447,82 @@ void updateCircleVertices(float* vertices, float centerX, float centerY, float r
     }
 }
 
+void RenderText(unsigned int shader, std::string text, float x, float y, float scale, glm::vec3 color) {
+    // Activate corresponding render state
+    glUseProgram(shader);
+    glUniform3f(glGetUniformLocation(shader, "textColor"), color.x, color.y, color.z);
+    glActiveTexture(GL_TEXTURE0);
+    glBindVertexArray(textVAO);
+
+    // Iterate through all characters
+    for (auto c : text) {
+        Character ch = Characters[c];
+
+        float xpos = x + ch.Bearing.x * scale;
+        float ypos = y - (ch.Size.y - ch.Bearing.y) * scale;
+
+        float w = ch.Size.x * scale;
+        float h = ch.Size.y * scale;
+
+        // Update VBO for each character
+        float vertices[6][4] = {
+            { xpos,     ypos + h,   0.0f, 0.0f },
+            { xpos,     ypos,       0.0f, 1.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+
+            { xpos,     ypos + h,   0.0f, 0.0f },
+            { xpos + w, ypos,       1.0f, 1.0f },
+            { xpos + w, ypos + h,   1.0f, 0.0f }
+        };
+
+        // Render glyph texture over quad
+        glBindTexture(GL_TEXTURE_2D, ch.TextureID);
+
+        // Update content of VBO memory
+        glBindBuffer(GL_ARRAY_BUFFER, textVBO);
+        glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(vertices), vertices);
+
+        // Render quad
+        glDrawArrays(GL_TRIANGLES, 0, 6);
+
+        // Advance cursors for next glyph (advance is number of 1/64 pixels)
+        x += (ch.Advance >> 6) * scale;
+    }
+    glBindVertexArray(0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+
+
 float clip(float n, float lower, float upper) {
     return std::max(lower, std::min(n, upper));
 }
+// Function to calculate text width
+float CalculateTextWidth(const std::string& text, float scale) {
+    float width = 0.0f;
+    for (const char& c : text) {
+        Character ch = Characters[c];
+        width += (ch.Advance >> 6) * scale; // Advance is in 1/64th pixels
+    }
+    return width;
+}
+
+void RenderTopRightText(unsigned int textShader, const std::string& text, float yOffset, float scale, glm::vec3 color) {
+    // Activate the text shader and set the projection
+    glUseProgram(textShader);
+    glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
+    glUniformMatrix4fv(glGetUniformLocation(textShader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+    // Calculate text width
+    float textWidth = CalculateTextWidth(text, scale);
+
+    // Position the text at the top-right corner
+    float x = SCR_WIDTH - textWidth - 10.0f; // Add some padding
+    float y = SCR_HEIGHT - yOffset;         // Adjust for y offset
+
+    RenderText(textShader, text, x, y, scale, color);
+}
+
+// In your rendering loop
+
+
