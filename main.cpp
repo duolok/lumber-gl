@@ -1,6 +1,7 @@
 #define _CRT_SECURE_NO_WARNINGS
 #define M_PI 3.14159265358979323846
 #define ELLIPSE_SEGMENTS 50
+#define STB_IMAGE_IMPLEMENTATION
 
 #include <iostream>
 #include <fstream>
@@ -14,6 +15,8 @@
 #include <algorithm>
 #include <map>
 #include <cmath>
+#include "stb_image.h"
+#include <cstring>
 #include FT_FREETYPE_H
 
 using namespace std;
@@ -99,6 +102,29 @@ int main() {
         return 3;
     }
 
+    int width, height, channels;
+    unsigned char* pixels = stbi_load("res/bone.png", &width, &height, &channels, 4);
+    if (!pixels) {
+        std::cerr << "Failed to load cursor image\n";
+        return -1;
+    }
+
+    GLFWimage image;
+    image.width = width;
+    image.height = height;
+    image.pixels = pixels;
+
+    GLFWcursor* cursor = glfwCreateCursor(&image, width / 2, height / 2); // Hotspot at center
+    if (!cursor) {
+        std::cerr << "Failed to create GLFW cursor\n";
+        stbi_image_free(pixels);
+        glfwTerminate();
+        return -1;
+    }
+
+    glfwSetCursor(window, cursor);
+    stbi_image_free(pixels);
+
     // Initialize FreeType
     FT_Library ft;
     if (FT_Init_FreeType(&ft))
@@ -108,7 +134,7 @@ int main() {
     }
 
     FT_Face face;
-    if (FT_New_Face(ft, "fonts/ComicMono.ttf", 0, &face))
+    if (FT_New_Face(ft, "res/fonts/ComicMono.ttf", 0, &face))
     {
         std::cout << "ERROR::FREETYPE: Failed to load font" << std::endl;
         return -1;
@@ -1024,8 +1050,8 @@ int main() {
 
         calculateSunMoonPosition(sunMoonProgress, sunX, sunY, moonX, moonY);
 
-        float sunAngleStart = isDay ? 0.0f : M_PI; // Start angle
-        float sunAngleEnd = isDay ? M_PI : 0.0f;   // End angle
+        float sunAngleStart = isDay ? 0.0f : M_PI; 
+        float sunAngleEnd = isDay ? M_PI : 0.0f;   
         float sunAngle = sunAngleStart + (sunAngleEnd - sunAngleStart) * sunMoonProgress;
 
         for (int i = 0; i < 3; ++i) {
@@ -1246,6 +1272,8 @@ int main() {
     glDeleteBuffers(1, &dogVBO);
     glDeleteProgram(shaderProgram);
 
+    glfwDestroyCursor(cursor);
+    glfwDestroyWindow(window);
     glfwTerminate();
     return 0;
 }
@@ -1508,21 +1536,14 @@ float CalculateTextWidth(const std::string& text, float scale) {
 }
 
 void RenderTopRightText(unsigned int textShader, const std::string& text, float yOffset, float scale, glm::vec3 color) {
-    // Activate the text shader and set the projection
     glUseProgram(textShader);
     glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
     glUniformMatrix4fv(glGetUniformLocation(textShader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
 
-    // Calculate text width
     float textWidth = CalculateTextWidth(text, scale);
 
-    // Position the text at the top-right corner
-    float x = SCR_WIDTH - textWidth - 10.0f; // Add some padding
-    float y = SCR_HEIGHT - yOffset;         // Adjust for y offset
+    float x = SCR_WIDTH - textWidth - 10.0f; 
+    float y = SCR_HEIGHT - yOffset;         
 
     RenderText(textShader, text, x, y, scale, color);
 }
-
-// In your rendering loop
-
-
