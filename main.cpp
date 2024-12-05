@@ -55,6 +55,10 @@ float dogCenterX = -0.65f;
 float zInitialY = dogTopY + 0.05f;
 float chimneyX = 0.125f;
 float chimneyY = 0.33f;
+float dogPreviousX = dogX;
+float dogPreviousY = dogY;
+float eatingStartTime = 0.0f;
+float eatingDuration = 0.0f;
 int selectedRoom = -1;
 
 unsigned int compileShader(GLenum shaderType, const char* source);
@@ -70,6 +74,10 @@ void RenderText(unsigned int shader, std::string text, float x, float y, float s
 float CalculateTextWidth(const std::string& text, float scale);
 static unsigned loadImageToTexture(const char* filePath);
 float getDogCenter(float dogX, bool dogGoingLeft);
+void spawnFood(float x, float y);
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods);
+bool isClickOnGrass(float x, float y);
+void animateDog();
 float clip(float n, float lower, float upper);
 
 struct Character {
@@ -83,14 +91,29 @@ struct ZLetter {
     float startTime;
     float xOffset;
 };
-
-std::vector<ZLetter> zLetters;
-float zSpawnInterval = 1.0f; // Spawn a new "Z" every second
+vector<ZLetter> zLetters;
+float zSpawnInterval = 1.5f; // spawn a new "Z" every second
 float lastZSpawnTime = 0.0f;
 
+struct Food {
+    float x;
+    float y;
+    bool active;
+};
+Food food = { 0.0f, 0.0f, false };
 
-std::map<char, Character> Characters;
+enum DogState {
+    DOG_IDLE,
+    DOG_MOVING_TO_FOOD,
+    DOG_EATING,
+    DOG_RETURNING
+};
 
+DogState dogState = DOG_IDLE;
+
+
+
+map<char, Character> Characters;
 unsigned int textVAO, textVBO;
 
 int main() {
@@ -115,6 +138,7 @@ int main() {
     }
 
     glfwMakeContextCurrent(window);
+    glfwSetMouseButtonCallback(window, mouseButtonCallback);
     glfwSetFramebufferSizeCallback(window, framebufferSizeCallback);
 
     // Initialize GLEW
@@ -211,6 +235,7 @@ int main() {
     unsigned int textShader = createShaderProgram("text.vert", "text.frag");
     unsigned int windowShader = createShaderProgram("window.vert", "window.frag");
     unsigned int zShader = createShaderProgram("z.vert", "z.frag");
+    unsigned int foodShader = createShaderProgram("food.vert", "food.frag");
     unsigned int characterTexture = loadImageToTexture("res/walter.png");
 
     if (!characterTexture) {
@@ -531,6 +556,18 @@ int main() {
         -0.538f,  -0.595f,  0.0f,   0.949f, 0.749f, 0.941f,
         -0.538f,  -0.618f,  0.0f,   0.949f, 0.749f, 0.941f,
     };
+
+    float foodVertices[] = {
+        // positions           // colors
+        -0.01f, -0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // bottom left
+         0.01f, -0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // bottom right
+         0.01f,  0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // top right
+
+        -0.01f, -0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // bottom left
+         0.01f,  0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // top right
+        -0.01f,  0.015f, 0.0f,   1.0f, 0.5f, 0.0f  // top left
+    };
+
 
     float zVerticies[] = {
             -0.05f,  0.0f, 0.0f,   0.0f, 0.0f, // bottom left
@@ -1076,6 +1113,24 @@ int main() {
 
     glBindVertexArray(0);
 
+    unsigned int foodVAO, foodVBO;
+    glGenVertexArrays(1, &foodVAO);
+    glGenBuffers(1, &foodVBO);
+
+    glBindVertexArray(foodVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, foodVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(foodVertices), foodVertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0); // positions
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float))); // colors
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+
 
     unsigned int skyVAO, skyVBO;
     glGenVertexArrays(1, &skyVAO);
@@ -1171,6 +1226,9 @@ int main() {
             sky[i * 6 + 4] = skyColor[1];
             sky[i * 6 + 5] = skyColor[2];
         }
+
+        if (isDay && food.active) { animateDog(); }
+
 
         glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
         glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(sky), sky);
@@ -1332,7 +1390,7 @@ int main() {
         auto it = zLetters.begin();
         while (it != zLetters.end()) {
             float elapsed = currentTime - it->startTime;
-            if (elapsed > 3.0f) { // Duration of the "Z" effect
+            if (elapsed > 2.0f) { // Duration of the "Z" effect
                 it = zLetters.erase(it);
             }
             else {
@@ -1349,6 +1407,24 @@ int main() {
 
                 ++it;
             }
+        }
+
+        if (food.active) {
+            glUseProgram(foodShader);
+
+            glm::mat4 model = glm::mat4(1.0f);
+            model = glm::translate(model, glm::vec3(food.x, food.y, 0.0f));
+
+            glm::mat4 foodView = glm::mat4(1.0f);
+            glm::mat4 foodProjection = glm::mat4(1.0f);
+
+            glUniformMatrix4fv(glGetUniformLocation(foodShader, "model"), 1, GL_FALSE, glm::value_ptr(model));
+            glUniformMatrix4fv(glGetUniformLocation(foodShader, "view"), 1, GL_FALSE, glm::value_ptr(foodView));
+            glUniformMatrix4fv(glGetUniformLocation(foodShader, "projection"), 1, GL_FALSE, glm::value_ptr(foodProjection));
+
+            glBindVertexArray(foodVAO);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+            glBindVertexArray(0);
         }
 
         glfwSwapBuffers(window);
@@ -1502,17 +1578,13 @@ void processInput(GLFWwindow* window) {
     if (isDay) {
         if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
             dogX -= dogSpeed;
-            if (dogX < dogMinX) {
-                dogX = dogMinX;
-            }
+            dogX = clip(dogX, dogMinX, dogMaxX);
             dogGoingLeft = true;
 
         }
         if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
             dogX += dogSpeed;
-            if (dogX > dogMaxX) {
-                dogX = dogMaxX;
-            }
+            dogX = clip(dogX, dogMinX, dogMaxX);
             dogGoingLeft = false;
         }
     }
@@ -1741,12 +1813,92 @@ float getDogCenter(float dogX, bool dogGoingLeft) {
     float localX = -0.56;
     float center;
 
-    if (dogGoingLeft) {
-        center = 2.0f * dogCenterX - localX;
-    }
-    else {
-        center = localX;
-    }
+    if (dogGoingLeft) center = 2.0f * dogCenterX - localX;
+    else center = localX; 
 
     return dogX + center;
+}
+
+void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
+    if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
+        double xpos, ypos;
+        glfwGetCursorPos(window, &xpos, &ypos);
+
+        int width, height;
+        glfwGetWindowSize(window, &width, &height);
+
+        float xNDC = (float)(xpos / width) * 2.0f - 1.0f;
+        float yNDC = 1.0f - (float)(ypos / height) * 2.0f;
+
+        if (isClickOnGrass(xNDC, yNDC)) {
+            spawnFood(xNDC, yNDC);
+        }
+    }
+}
+
+bool isClickOnGrass(float x, float y) {
+    float grassBottom = -0.8f;
+    float grassTop = -0.55f;
+
+    if (y >= grassBottom && y <= grassTop) {
+        return true;
+    }
+    return false;
+}
+
+
+void spawnFood(float xFood, float y) {
+    if (!food.active) {
+        food.x = xFood;
+        food.y = -0.7f;
+        food.active = true;
+        cout << "Food spawned at x :" << food.x << " , y:" << food.y << endl;
+    } 
+}
+
+void animateDog() {
+    switch (dogState) {
+    case DOG_IDLE:
+        if (isDay && food.active) {
+            dogPreviousX = getDogCenter(dogX, dogGoingLeft); 
+            dogState = DOG_MOVING_TO_FOOD;
+        }
+        break;
+
+    case DOG_MOVING_TO_FOOD: {
+        float dx = food.x - getDogCenter(dogX, dogGoingLeft);
+        float speed = 0.001f; 
+
+        if (fabs(dx) > speed) {
+            dogX += (dx / fabs(dx)) * speed; 
+            dogGoingLeft = (dx < 0); 
+        }
+        else {
+            dogX += dx; 
+            dogState = DOG_EATING; 
+            eatingStartTime = glfwGetTime(); 
+            eatingDuration = 3.0f + static_cast<float>(rand() % 200) / 100.0f; 
+        }
+    } break;
+
+    case DOG_EATING:
+        if (glfwGetTime() - eatingStartTime >= eatingDuration) {
+            food.active = false; 
+            dogState = DOG_RETURNING; 
+        }
+        break;
+
+    case DOG_RETURNING: {
+        float dx = dogPreviousX - getDogCenter(dogX, dogGoingLeft); 
+        float speed = 0.001f; 
+        if (fabs(dx) > speed) {
+            dogX += (dx / fabs(dx)) * speed; // Move towards previous position
+            dogGoingLeft = (dx < 0); // Set direction
+        }
+        else {
+            dogX = getDogCenter(dogX, dogGoingLeft); 
+            dogState = DOG_IDLE; 
+        }
+    } break;
+    }
 }
