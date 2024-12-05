@@ -57,9 +57,11 @@ float chimneyX = 0.125f;
 float chimneyY = 0.33f;
 float dogPreviousX = dogX;
 float dogPreviousY = dogY;
+float dogStartingX;
 float eatingStartTime = 0.0f;
 float eatingDuration = 0.0f;
 int selectedRoom = -1;
+
 
 unsigned int compileShader(GLenum shaderType, const char* source);
 unsigned int createShaderProgram(const char* vertexShaderSource, const char* fragmentShaderSource);
@@ -1227,7 +1229,9 @@ int main() {
             sky[i * 6 + 5] = skyColor[2];
         }
 
-        if (isDay && food.active) { animateDog(); }
+        if (isDay) {
+            animateDog();
+        }
 
 
         glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
@@ -1857,48 +1861,53 @@ void spawnFood(float xFood, float y) {
 }
 
 void animateDog() {
+    const float epsilon = 0.001f; 
+
     switch (dogState) {
     case DOG_IDLE:
         if (isDay && food.active) {
-            dogPreviousX = getDogCenter(dogX, dogGoingLeft); 
+            dogPreviousX = getDogCenter(dogX, dogGoingLeft);
+            dogStartingX = dogPreviousX;
             dogState = DOG_MOVING_TO_FOOD;
         }
         break;
 
     case DOG_MOVING_TO_FOOD: {
         float dx = food.x - getDogCenter(dogX, dogGoingLeft);
-        float speed = 0.001f; 
+        float speed = 0.002f; 
 
-        if (fabs(dx) > speed) {
+        if (fabs(dx) > epsilon) {
             dogX += (dx / fabs(dx)) * speed; 
             dogGoingLeft = (dx < 0); 
         }
         else {
-            dogX += dx; 
-            dogState = DOG_EATING; 
-            eatingStartTime = glfwGetTime(); 
+            dogX = food.x - getDogCenter(0.0f, dogGoingLeft); 
+            dogState = DOG_EATING;
+            eatingStartTime = glfwGetTime();
             eatingDuration = 3.0f + static_cast<float>(rand() % 200) / 100.0f; 
         }
     } break;
 
     case DOG_EATING:
         if (glfwGetTime() - eatingStartTime >= eatingDuration) {
-            food.active = false; 
             dogState = DOG_RETURNING; 
+            food.active = false; 
         }
         break;
 
     case DOG_RETURNING: {
-        float dx = dogPreviousX - getDogCenter(dogX, dogGoingLeft); 
-        float speed = 0.001f; 
-        if (fabs(dx) > speed) {
-            dogX += (dx / fabs(dx)) * speed; // Move towards previous position
-            dogGoingLeft = (dx < 0); // Set direction
+        float dx = dogStartingX - getDogCenter(dogX, dogGoingLeft);
+        float speed = 0.002f; 
+
+        if (fabs(dx) > epsilon) {
+            dogX += (dx / fabs(dx)) * speed; 
+            dogGoingLeft = (dx < 0); 
         }
         else {
-            dogX = getDogCenter(dogX, dogGoingLeft); 
+            dogX = dogStartingX - getDogCenter(0.0f, dogGoingLeft); 
             dogState = DOG_IDLE; 
         }
     } break;
     }
 }
+
