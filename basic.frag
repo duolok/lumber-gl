@@ -5,6 +5,7 @@ out vec4 FragColor;
 
 uniform int uH;
 uniform bool isFence;
+uniform float uAlpha;
 uniform float dim;
 
 
