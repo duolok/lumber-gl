@@ -1336,6 +1336,8 @@ int main() {
 
 
         glUseProgram(windowShader);
+        glUniform1f(glGetUniformLocation(windowShader, "uTime"), glfwGetTime());
+
         for (int i = 0; i < 7; ++i) {
             glUniform1i(glGetUniformLocation(windowShader, "uRoomIndex"), i);
             glUniform1i(glGetUniformLocation(windowShader, "uSelectedRoom"), selectedRoom);
@@ -1571,7 +1573,8 @@ void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !keyPressed) {
         keyPressed = true;
         transitionInProgress = true;
-        lightEnabled = true;
+        transparencyEnabled = true;
+        lightEnabled = !lightEnabled;
         selectedRoom = rand() % 7;
         transitionStartTime = glfwGetTime();
         cout << "Toggled day/night: " << (isDay ? "Day" : "Night") << endl;

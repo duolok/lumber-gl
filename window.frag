@@ -11,28 +11,28 @@ uniform int uRoomIndex;            // Index of the current room
 uniform bool uUseTexture;          // Indicates if texture should be applied
 uniform sampler2D uCharacterTexture; // Texture sampler for character
 uniform float uAlpha;              // Alpha for transparency
-uniform float uTransitionProgress; // Transition progress (0.0 to 1.0)
-uniform vec3 lightStartColor;      // Color at the start of transition
-uniform vec3 lightEndColor;        // Color at the end of transition
+uniform float uTime;               // Current time for pulsing effect
+uniform vec3 lightStartColor;      // Color at the start of pulsing
+uniform vec3 lightEndColor;        // Color at the peak of pulsing
 
 void main() {
     vec3 color = ourColor;
 
-    // Handle lighting transitions
+    // Handle lighting transitions and pulsing
     if (uLightEnabled && uRoomIndex == uSelectedRoom) {
-        color = mix(lightStartColor, lightEndColor, uTransitionProgress);
+        // Create a sine-based pulsing effect using time
+        float pulse = 0.5 + 0.5 * sin(uTime * 3.0); // Pulses between 0.5 and 1.0
+        color = mix(lightStartColor, lightEndColor, pulse); // Interpolate colors based on pulse
     }
+
     // Apply texture if enabled
-	if (uUseTexture && uRoomIndex == uSelectedRoom) {
-		vec4 textureColor = texture(uCharacterTexture, TexCoord);
-		// Blend the texture color with the calculated color and apply transparency
-		FragColor = mix(vec4(color, uAlpha), textureColor, uAlpha);
-	}
-
-
+    if (uUseTexture && uRoomIndex == uSelectedRoom) {
+        vec4 textureColor = texture(uCharacterTexture, TexCoord);
+        FragColor = mix(vec4(color, uAlpha), textureColor, uAlpha);
+    }
     // Handle transparency
     else if (uTransparent) {
-        FragColor = vec4(color, uAlpha); // Apply transparency
+        FragColor = vec4(color, uAlpha);
     } 
     // Default color output
     else {
