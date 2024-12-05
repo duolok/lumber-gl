@@ -14,6 +14,7 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <algorithm>
 #include <map>
+#include <vector>
 #include <cmath>
 #include "stb_image.h"
 #include <cstring>
@@ -49,6 +50,9 @@ float dogX = 0.0f;
 float dogY = 0.0f;
 float dogMinX = -0.1f;
 float dogMaxX = 1.3f;
+float dogTopY = dogY + (-0.55f);
+float dogCenterX = -0.65f;
+float zInitialY = dogTopY + 0.05f;
 float chimneyX = 0.125f;
 float chimneyY = 0.33f;
 int selectedRoom = -1;
@@ -65,6 +69,7 @@ void RenderTopRightText(unsigned int textShader, const std::string& text, float 
 void RenderText(unsigned int shader, std::string text, float x, float y, float scale, glm::vec3 color);
 float CalculateTextWidth(const std::string& text, float scale);
 static unsigned loadImageToTexture(const char* filePath);
+float getDogCenter(float dogX, bool dogGoingLeft);
 float clip(float n, float lower, float upper);
 
 struct Character {
@@ -73,6 +78,16 @@ struct Character {
     glm::ivec2 Bearing;
     unsigned int Advance;
 };
+
+struct ZLetter {
+    float startTime;
+    float xOffset;
+};
+
+std::vector<ZLetter> zLetters;
+float zSpawnInterval = 1.0f; // Spawn a new "Z" every second
+float lastZSpawnTime = 0.0f;
+
 
 std::map<char, Character> Characters;
 
@@ -195,6 +210,7 @@ int main() {
     unsigned int smokeShader = createShaderProgram("smoke.vert", "smoke.frag");
     unsigned int textShader = createShaderProgram("text.vert", "text.frag");
     unsigned int windowShader = createShaderProgram("window.vert", "window.frag");
+    unsigned int zShader = createShaderProgram("z.vert", "z.frag");
     unsigned int characterTexture = loadImageToTexture("res/walter.png");
 
     if (!characterTexture) {
@@ -515,6 +531,33 @@ int main() {
         -0.538f,  -0.595f,  0.0f,   0.949f, 0.749f, 0.941f,
         -0.538f,  -0.618f,  0.0f,   0.949f, 0.749f, 0.941f,
     };
+
+    float zVerticies[] = {
+            -0.05f,  0.0f, 0.0f,   0.0f, 0.0f, // bottom left
+			 0.05f,  0.0f, 0.0f,   1.0f, 0.0f, // bottom right
+			 0.05f,  0.1f, 0.0f,   1.0f, 1.0f, // top right
+
+			-0.05f,  0.0f, 0.0f,   0.0f, 0.0f, // bottom left
+			 0.05f,  0.1f, 0.0f,   1.0f, 1.0f, // top right
+			-0.05f,  0.1f, 0.0f,   0.0f, 1.0f  // top left
+    };
+
+    unsigned int zVAO, zVBO;
+    glGenVertexArrays(1, &zVAO);
+    glGenBuffers(1, &zVBO);
+
+    glBindVertexArray(zVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, zVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(zVerticies), zVerticies, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0); 
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float))); 
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
 
     unsigned int dogVAO, dogVBO;
     glGenVertexArrays(1, &dogVAO);
@@ -1080,10 +1123,11 @@ int main() {
     while (!glfwWindowShouldClose(window)) {
         processInput(window);
         updateTreeBaseColors(treeBase, treebaseVBO, paintProgress);
+        float dogSleepTime = glfwGetTime();
 
         if (transitionInProgress) {
             float currentTime = glfwGetTime();
-            sunMoonProgress = (currentTime - transitionStartTime) / transitionDuration;
+            sunMoonProgress = (dogSleepTime - transitionStartTime) / transitionDuration;
             if (sunMoonProgress >= 1.0f) {
                 sunMoonProgress = 1.0f;
                 transitionInProgress = false;
@@ -1094,8 +1138,21 @@ int main() {
             sunMoonProgress = 0.0f;
         }
 
-        if (isDay) { dimFactor = 1.0f - 0.5f * sunMoonProgress; }
-        else { dimFactor = 0.5f + 0.5f * sunMoonProgress; }
+        if (isDay) {
+            dimFactor = 1.0f - 0.5f * sunMoonProgress;
+            zLetters.clear();
+            lastZSpawnTime = dogSleepTime;
+        }
+        else {
+            dimFactor = 0.5f + 0.5f * sunMoonProgress;
+			if (dogSleepTime - lastZSpawnTime >= zSpawnInterval) {
+				ZLetter newZ;
+				newZ.startTime = dogSleepTime;
+				newZ.xOffset = ((rand() % 100) / 100.0f - 0.5f) * 0.04f; // Random horizontal offset
+				zLetters.push_back(newZ);
+				lastZSpawnTime = dogSleepTime;
+			}
+        }
 
 
         calculateSunMoonPosition(sunMoonProgress, sunX, sunY, moonX, moonY);
@@ -1263,6 +1320,37 @@ int main() {
         glUniformMatrix4fv(glGetUniformLocation(textShader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
         RenderTopRightText(textShader, infoText, 50.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 
+        float dogTopY = dogY + (-0.55f); 
+        float dogCenter = getDogCenter(dogX, dogGoingLeft);
+        float zInitialY = dogTopY + 0.05f; 
+
+
+        glUseProgram(zShader);
+        glUniform1f(glGetUniformLocation(zShader, "uTime"), currentTime);
+        glUniform3f(glGetUniformLocation(zShader, "uColor"), 1.0f, 1.0f, 1.0f); // White color for "Z"
+
+        auto it = zLetters.begin();
+        while (it != zLetters.end()) {
+            float elapsed = currentTime - it->startTime;
+            if (elapsed > 3.0f) { // Duration of the "Z" effect
+                it = zLetters.erase(it);
+            }
+            else {
+                glUniform1f(glGetUniformLocation(zShader, "uStartTime"), it->startTime);
+                glUniform2f(glGetUniformLocation(zShader, "uOrigin"), dogCenter - it->xOffset, zInitialY);
+
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, Characters['Z'].TextureID);
+                glUniform1i(glGetUniformLocation(zShader, "uTexture"), 0);
+
+                glBindVertexArray(zVAO);
+                glDrawArrays(GL_TRIANGLES, 0, 6);
+                glBindVertexArray(0);
+
+                ++it;
+            }
+        }
+
         glfwSwapBuffers(window);
         glfwPollEvents();
     }
@@ -1411,20 +1499,22 @@ void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_RELEASE) {
         keyPressed = false;
     }
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        dogX -= dogSpeed;
-        if (dogX < dogMinX) {
-            dogX = dogMinX;
-        }
-        dogGoingLeft = true;
+    if (isDay) {
+        if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+            dogX -= dogSpeed;
+            if (dogX < dogMinX) {
+                dogX = dogMinX;
+            }
+            dogGoingLeft = true;
 
-    }
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-        dogX += dogSpeed;
-        if (dogX > dogMaxX) {
-            dogX = dogMaxX;
         }
-        dogGoingLeft = false;
+        if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+            dogX += dogSpeed;
+            if (dogX > dogMaxX) {
+                dogX = dogMaxX;
+            }
+            dogGoingLeft = false;
+        }
     }
 
     if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
@@ -1646,3 +1736,17 @@ static unsigned loadImageToTexture(const char* filePath) {
     }
 }
 
+
+float getDogCenter(float dogX, bool dogGoingLeft) {
+    float localX = -0.56;
+    float center;
+
+    if (dogGoingLeft) {
+        center = 2.0f * dogCenterX - localX;
+    }
+    else {
+        center = localX;
+    }
+
+    return dogX + center;
+}
