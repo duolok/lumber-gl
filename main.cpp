@@ -31,6 +31,10 @@ bool isDay = true;
 bool keyPressed = false;
 bool transitionInProgress = false;
 bool dogGoingLeft = false;
+bool transparencyEnabled = false;
+bool lightEnabled = false;
+bool lightAlpha = 0.5;
+float windowAlpha = 0.25;
 float paintProgress = 0.0f;
 float timeOfDay = 0.3f;
 float dimFactor = 1.0f;
@@ -47,6 +51,7 @@ float dogMinX = -0.1f;
 float dogMaxX = 1.3f;
 float chimneyX = 0.125f;
 float chimneyY = 0.33f;
+int selectedRoom = -1;
 
 unsigned int compileShader(GLenum shaderType, const char* source);
 unsigned int createShaderProgram(const char* vertexShaderSource, const char* fragmentShaderSource);
@@ -59,6 +64,7 @@ void updateDayNightCycle(float& timeOfDay, float* skyColor, float& objectDimFact
 void RenderTopRightText(unsigned int textShader, const std::string& text, float yOffset, float scale, glm::vec3 color);
 void RenderText(unsigned int shader, std::string text, float x, float y, float scale, glm::vec3 color);
 float CalculateTextWidth(const std::string& text, float scale);
+static unsigned loadImageToTexture(const char* filePath);
 float clip(float n, float lower, float upper);
 
 struct Character {
@@ -140,8 +146,8 @@ int main() {
         return -1;
     }
 
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     FT_Set_Pixel_Sizes(face, 0, 20);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -188,6 +194,13 @@ int main() {
     unsigned int dogShader = createShaderProgram("dog.vert", "dog.frag");
     unsigned int smokeShader = createShaderProgram("smoke.vert", "smoke.frag");
     unsigned int textShader = createShaderProgram("text.vert", "text.frag");
+    unsigned int windowShader = createShaderProgram("window.vert", "window.frag");
+    unsigned int characterTexture = loadImageToTexture("res/walter.png");
+
+    if (!characterTexture) {
+        std::cerr << "Failed to load characterr texture!" << std::endl;
+        return -1;
+    }
 
 
     float triangleVertices[] = {
@@ -237,43 +250,73 @@ int main() {
     };
 
     float win1[] = {
-        -0.25f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f,
-        -0.19f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f,
-        -0.19f, -0.28f, 0.0f,     1.0f, 1.0f, 1.0f,
+        -0.25f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+        -0.19f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+        -0.19f, -0.28f, 0.0f,     1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
 
-        -0.25f,  -0.38f, 0.0f,    1.0f, 1.0f, 1.0f,
-        -0.19f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f,
-        -0.25f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f,
+        -0.25f,  -0.38f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+        -0.19f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 
+        -0.25f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
     };
 
     float win2[] = {
-        -0.12f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f,
-        -0.06f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f,
-        -0.06f, -0.28f, 0.0f,     1.0f, 1.0f, 1.0f,
+        -0.12f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+        -0.06f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+        -0.06f, -0.28f, 0.0f,     1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
 
-        -0.12f,  -0.38f, 0.0f,    1.0f, 1.0f, 1.0f,
-        -0.06f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f,
-        -0.12f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f,
+        -0.12f,  -0.38f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+        -0.06f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+        -0.12f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
     };
 
     float win3[] = {
-         0.06f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f,
-         0.12f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f,
-         0.12f, -0.28f, 0.0f,     1.0f, 1.0f, 1.0f,
-
-         0.06f,  -0.38f, 0.0f,    1.0f, 1.0f, 1.0f,
-         0.12f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f,
-         0.06f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f,
+         0.06f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+         0.12f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+         0.12f, -0.28f, 0.0f,     1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+ 
+         0.06f,  -0.38f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+         0.12f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+         0.06f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
     };
 
     float win4[] = {
-         0.19f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f,
-         0.25f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f,
-         0.25f, -0.28f, 0.0f,     1.0f, 1.0f, 1.0f,
+         0.19f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+         0.25f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+         0.25f, -0.28f, 0.0f,     1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
 
-         0.19f,  -0.38f, 0.0f,    1.0f, 1.0f, 1.0f,
-         0.25f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f,
-         0.19f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f,
+         0.19f,  -0.38f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+         0.25f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+         0.19f,  -0.28f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+    };
+
+    float win5[] = {
+         -0.14f, 0.0f, 0.0f,     1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+         -0.08f, 0.0f, 0.0f,     1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+         -0.08f, 0.1f, 0.0f,     1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 
+
+         -0.14f,  0.0f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+         -0.08f,  0.1f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+         -0.14f,  0.1f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+    };
+
+    float win6[] = {
+         -0.03f,  0.0f, 0.0f,     1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+          0.03f,  0.0f, 0.0f,     1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+          0.03f,  0.1f, 0.0f,     1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+
+         -0.03f,   0.0f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+          0.03f,   0.1f, 0.0f,    1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+         -0.03f,   0.1f, 0.0f,    1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+    };
+
+    float win7[] = {
+			0.08f,  0.0f, 0.0f,      1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+			0.14f,  0.0f, 0.0f,      1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+			0.14f,  0.1f, 0.0f,      1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+
+			0.08f,  0.0f, 0.0f,      1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+			0.14f,  0.1f, 0.0f,      1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+			0.08f,  0.1f, 0.0f,      1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
     };
 
     float doorHandle[] = {
@@ -303,35 +346,6 @@ int main() {
         -0.16f,  0.15f, 0.0f,     0.51f, 0.604f, 0.8f,
     };
 
-    float win5[] = {
-         -0.14f, 0.0f, 0.0f,     1.0f, 1.0f, 1.0f,
-         -0.08f, 0.0f, 0.0f,     1.0f, 1.0f, 1.0f,
-         -0.14f, 0.1f, 0.0f,     1.0f, 1.0f, 1.0f,
-
-         -0.08f,  0.0f, 0.0f,    1.0f, 1.0f, 1.0f,
-         -0.14f,  0.1f, 0.0f,    1.0f, 1.0f, 1.0f,
-         -0.08f,  0.1f, 0.0f,    1.0f, 1.0f, 1.0f,
-    };
-
-    float win6[] = {
-         -0.03f,  0.0f, 0.0f,     1.0f, 1.0f, 1.0f,
-          0.03f,  0.0f, 0.0f,     1.0f, 1.0f, 1.0f,
-          0.03f,  0.1f, 0.0f,     1.0f, 1.0f, 1.0f,
-
-         -0.03f,   0.0f, 0.0f,    1.0f, 1.0f, 1.0f,
-          0.03f,   0.1f, 0.0f,    1.0f, 1.0f, 1.0f,
-         -0.03f,   0.1f, 0.0f,    1.0f, 1.0f, 1.0f,
-    };
-
-    float win7[] = {
-         0.08f,  0.0f, 0.0f,     1.0f, 1.0f, 1.0f,
-         0.14f,  0.0f, 0.0f,     1.0f, 1.0f, 1.0f,
-         0.14f,  0.1f, 0.0f,     1.0f, 1.0f, 1.0f,
-
-         0.08f,  0.0, 0.0f,    1.0f, 1.0f, 1.0f,
-         0.14f,  0.1f, 0.0f,    1.0f, 1.0f, 1.0f,
-         0.08f,  0.1f, 0.0f,    1.0f, 1.0f, 1.0f,
-    };
 
     float secondFloorExtension[] = {
         -0.16f,  0.15f, 0.0f,    0.51f, 0.604f, 0.8f,
@@ -788,11 +802,14 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, win1VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(win1), win1, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
 
@@ -805,11 +822,14 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, win2VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(win2), win2, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
 
     glBindVertexArray(0);
 
@@ -822,11 +842,15 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, win3VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(win3), win3, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
 
     glBindVertexArray(0);
 
@@ -839,11 +863,15 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, win4VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(win4), win4, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
 
     glBindVertexArray(0);
 
@@ -856,11 +884,15 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, win5VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(win5), win5, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
 
     glBindVertexArray(0);
 
@@ -873,11 +905,15 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, win6VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(win6), win6, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
 
     glBindVertexArray(0);
 
@@ -891,15 +927,27 @@ int main() {
     glBindBuffer(GL_ARRAY_BUFFER, win7VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(win7), win7, GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
     glEnableVertexAttribArray(1);
+
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+    glEnableVertexAttribArray(2);
+
 
     glBindVertexArray(0);
 
-
+    unsigned int winVAOs[] = {
+        win1VAO,
+        win2VAO,
+        win3VAO,
+        win4VAO,
+        win5VAO,
+        win6VAO,
+        win7VAO,
+    };
 
     unsigned int doghousebaseVAO, doghousebaseVBO;
     glGenVertexArrays(1, &doghousebaseVAO);
@@ -1021,6 +1069,8 @@ int main() {
     int uH = SCR_HEIGHT;
     int uHLoc = glGetUniformLocation(shaderProgram, "uH");
     int isFenceLoc = glGetUniformLocation(shaderProgram, "isFence");
+    int uWindowAlpha = glGetUniformLocation(windowShader, "uAlpha");
+    int uWindowTransparent = glGetUniformLocation(windowShader, "uTransparent");
     int dimLoc = glGetUniformLocation(shaderProgram, "dim");
 
     glUniform1i(uHLoc, uH);
@@ -1049,10 +1099,6 @@ int main() {
 
 
         calculateSunMoonPosition(sunMoonProgress, sunX, sunY, moonX, moonY);
-
-        float sunAngleStart = isDay ? 0.0f : M_PI; 
-        float sunAngleEnd = isDay ? M_PI : 0.0f;   
-        float sunAngle = sunAngleStart + (sunAngleEnd - sunAngleStart) * sunMoonProgress;
 
         for (int i = 0; i < 3; ++i) {
             if (isDay) {
@@ -1144,34 +1190,6 @@ int main() {
         glBindVertexArray(handleVAO);
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
-        glUniform1f(isFenceLoc, GL_FALSE);
-        glBindVertexArray(win1VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        glUniform1f(isFenceLoc, GL_FALSE);
-        glBindVertexArray(win2VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        glUniform1f(isFenceLoc, GL_FALSE);
-        glBindVertexArray(win3VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        glUniform1f(isFenceLoc, GL_FALSE);
-        glBindVertexArray(win4VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        glUniform1f(isFenceLoc, GL_FALSE);
-        glBindVertexArray(win5VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-
-        glUniform1f(isFenceLoc, GL_FALSE);
-        glBindVertexArray(win6VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
-
-        glUniform1f(isFenceLoc, GL_FALSE);
-        glBindVertexArray(win7VAO);
-        glDrawArrays(GL_TRIANGLES, 0, 6);
 
         glUniform1f(isFenceLoc, GL_FALSE);
         glBindVertexArray(doghousebaseVAO);
@@ -1197,6 +1215,33 @@ int main() {
         glBindVertexArray(sunVAO);
         glDrawArrays(GL_TRIANGLE_FAN, 0, ELLIPSE_SEGMENTS + 2);
 
+
+        glUseProgram(windowShader);
+        for (int i = 0; i < 7; ++i) {
+            glUniform1i(glGetUniformLocation(windowShader, "uRoomIndex"), i);
+            glUniform1i(glGetUniformLocation(windowShader, "uSelectedRoom"), selectedRoom);
+            glUniform1f(glGetUniformLocation(windowShader, "uAlpha"), transparencyEnabled ? 0.5f : 1.0f);
+            glUniform1i(glGetUniformLocation(windowShader, "uTransparent"), transparencyEnabled ? GL_TRUE : GL_FALSE); 
+            glUniform1i(glGetUniformLocation(windowShader, "uLightEnabled"), lightEnabled);
+            glUniform1f(glGetUniformLocation(windowShader, "uTransitionProgress"), sunMoonProgress);
+            glUniform3f(glGetUniformLocation(windowShader, "lightStartColor"), 1.0f, 1.0f, 0.0f);
+            glUniform3f(glGetUniformLocation(windowShader, "lightEndColor"), 1.0f, 0.5f, 0.0f);
+
+            if (transparencyEnabled && selectedRoom == i) {
+                glUniform1i(glGetUniformLocation(windowShader, "uUseTexture"), GL_TRUE);
+                glActiveTexture(GL_TEXTURE0);
+                glBindTexture(GL_TEXTURE_2D, characterTexture);
+                glUniform1i(glGetUniformLocation(windowShader, "uCharacterTexture"), 0);
+            }
+            else {
+                glUniform1i(glGetUniformLocation(windowShader, "uUseTexture"), GL_FALSE);
+            }
+
+            glBindVertexArray(winVAOs[i]);
+            glDrawArrays(GL_TRIANGLES, 0, 6);
+        }
+
+
         glUseProgram(dogShader);
         glUniform2f(glGetUniformLocation(dogShader, "uPos"), dogX, dogY);
         glUniform1i(glGetUniformLocation(dogShader, "uFlip"), dogGoingLeft);
@@ -1216,7 +1261,7 @@ int main() {
         glUseProgram(textShader);
         glm::mat4 projection = glm::ortho(0.0f, static_cast<float>(SCR_WIDTH), 0.0f, static_cast<float>(SCR_HEIGHT));
         glUniformMatrix4fv(glGetUniformLocation(textShader, "projection"), 1, GL_FALSE, glm::value_ptr(projection));
-		RenderTopRightText(textShader, infoText, 50.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+        RenderTopRightText(textShader, infoText, 50.0f, 1.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -1358,6 +1403,8 @@ void processInput(GLFWwindow* window) {
     if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS && !keyPressed) {
         keyPressed = true;
         transitionInProgress = true;
+        lightEnabled = true;
+        selectedRoom = rand() % 7;
         transitionStartTime = glfwGetTime();
         cout << "Toggled day/night: " << (isDay ? "Day" : "Night") << endl;
     }
@@ -1378,6 +1425,19 @@ void processInput(GLFWwindow* window) {
             dogX = dogMaxX;
         }
         dogGoingLeft = false;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_B) == GLFW_PRESS) {
+        transparencyEnabled = true;
+        selectedRoom = rand() % 7;
+    }
+    if (glfwGetKey(window, GLFW_KEY_V) == GLFW_PRESS) {
+        transparencyEnabled = false;
+        selectedRoom = -1;
+    }
+
+    if (glfwGetKey(window, GLFW_KEY_N) == GLFW_PRESS) {
+        transparencyEnabled = false;
     }
 }
 
@@ -1521,11 +1581,9 @@ void RenderText(unsigned int shader, std::string text, float x, float y, float s
 }
 
 
-
 float clip(float n, float lower, float upper) {
     return std::max(lower, std::min(n, upper));
 }
-// Function to calculate text width
 float CalculateTextWidth(const std::string& text, float scale) {
     float width = 0.0f;
     for (const char& c : text) {
@@ -1542,8 +1600,49 @@ void RenderTopRightText(unsigned int textShader, const std::string& text, float 
 
     float textWidth = CalculateTextWidth(text, scale);
 
-    float x = SCR_WIDTH - textWidth - 10.0f; 
-    float y = SCR_HEIGHT - yOffset;         
+    float x = SCR_WIDTH - textWidth - 10.0f;
+    float y = SCR_HEIGHT - yOffset;
 
     RenderText(textShader, text, x, y, scale, color);
 }
+
+static unsigned loadImageToTexture(const char* filePath) {
+    int TextureWidth;
+    int TextureHeight;
+    int TextureChannels;
+
+    stbi_set_flip_vertically_on_load(true);
+
+    unsigned char* ImageData = stbi_load(filePath, &TextureWidth, &TextureHeight, &TextureChannels, 0);
+    if (ImageData != NULL) {
+        GLint format = -1;
+        switch (TextureChannels) {
+        case 1: format = GL_RED; break;
+        case 3: format = GL_RGB; break;
+        case 4: format = GL_RGBA; break;
+        default: format = GL_RGB; break;
+        }
+
+        unsigned int Texture;
+        glGenTextures(1, &Texture);
+        glBindTexture(GL_TEXTURE_2D, Texture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE); 
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR); 
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, format, TextureWidth, TextureHeight, 0, format, GL_UNSIGNED_BYTE, ImageData);
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        stbi_image_free(ImageData);
+        return Texture;
+    }
+    else {
+        std::cout << "Texture not loaded! Texture path: " << filePath << std::endl;
+        stbi_image_free(ImageData);
+        return 0;
+    }
+}
+
