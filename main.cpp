@@ -1124,14 +1124,35 @@ int main() {
 
 
     float sunX, sunY, moonX, moonY;
-    int uH = SCR_HEIGHT;
+
     int uHLoc = glGetUniformLocation(shaderProgram, "uH");
     int isFenceLoc = glGetUniformLocation(shaderProgram, "isFence");
-    int uWindowAlpha = glGetUniformLocation(windowShader, "uAlpha");
-    int uWindowTransparent = glGetUniformLocation(windowShader, "uTransparent");
     int dimLoc = glGetUniformLocation(shaderProgram, "dim");
 
-    glUniform1i(uHLoc, uH);
+    int uWindowAlpha = glGetUniformLocation(windowShader, "uAlpha");
+    int uWindowTransparent = glGetUniformLocation(windowShader, "uTransparent");
+    int uLightEnabledLoc = glGetUniformLocation(windowShader, "uLightEnabled");
+    int uTransitionProgressLoc = glGetUniformLocation(windowShader, "uTransitionProgress");
+    int lightStartColorLoc = glGetUniformLocation(windowShader, "lightStartColor");
+    int lightEndColorLoc = glGetUniformLocation(windowShader, "lightEndColor");
+    int uRoomIndexLoc = glGetUniformLocation(windowShader, "uRoomIndex");
+    int uSelectedRoomLoc = glGetUniformLocation(windowShader, "uSelectedRoom");
+    int uUseTextureLoc = glGetUniformLocation(windowShader, "uUseTexture");
+    int uCharacterTextureLoc = glGetUniformLocation(windowShader, "uCharacterTexture");
+
+    int uPosLoc = glGetUniformLocation(dogShader, "uPos");
+    int uFlipLoc = glGetUniformLocation(dogShader, "uFlip");
+
+    int uTimeLocSmoke = glGetUniformLocation(smokeShader, "uTime");
+    int uOriginLocSmoke = glGetUniformLocation(smokeShader, "uOrigin");
+
+    int uTimeLocZ = glGetUniformLocation(zShader, "uTime");
+    int uColorLocZ = glGetUniformLocation(zShader, "uColor");
+    int uStartTimeLocZ = glGetUniformLocation(zShader, "uStartTime");
+    int uOriginLocZ = glGetUniformLocation(zShader, "uOrigin");
+    int uTextureLocZ = glGetUniformLocation(zShader, "uTexture");
+
+    glUniform1i(uHLoc, SCR_HEIGHT);
     glUseProgram(shaderProgram);
     glUniform1f(dimLoc, dimFactor);
 
@@ -1297,23 +1318,23 @@ int main() {
         glUniform1f(glGetUniformLocation(windowShader, "uTime"), glfwGetTime());
 
         for (int i = 0; i < 7; ++i) {
-            glUniform1i(glGetUniformLocation(windowShader, "uRoomIndex"), i);
-            glUniform1i(glGetUniformLocation(windowShader, "uSelectedRoom"), selectedRoom);
-            glUniform1f(glGetUniformLocation(windowShader, "uAlpha"), transparencyEnabled ? 0.5f : 1.0f);
-            glUniform1i(glGetUniformLocation(windowShader, "uTransparent"), transparencyEnabled ? GL_TRUE : GL_FALSE); 
-            glUniform1i(glGetUniformLocation(windowShader, "uLightEnabled"), lightEnabled);
-            glUniform1f(glGetUniformLocation(windowShader, "uTransitionProgress"), sunMoonProgress);
-            glUniform3f(glGetUniformLocation(windowShader, "lightStartColor"), 1.0f, 1.0f, 0.0f);
-            glUniform3f(glGetUniformLocation(windowShader, "lightEndColor"), 1.0f, 0.5f, 0.0f);
+            glUniform1i(uRoomIndexLoc, i);
+            glUniform1i(uSelectedRoomLoc, selectedRoom);
+            glUniform1f(uWindowAlpha, transparencyEnabled ? 0.5f : 1.0f);
+            glUniform1i(uWindowTransparent, transparencyEnabled ? GL_TRUE : GL_FALSE); 
+            glUniform1i(uLightEnabledLoc, lightEnabled);
+            glUniform1f(uTransitionProgressLoc, sunMoonProgress);
+            glUniform3f(lightStartColorLoc, 1.0f, 1.0f, 0.0f);
+            glUniform3f(lightEndColorLoc, 1.0f, 0.5f, 0.0f);
 
             if (transparencyEnabled && selectedRoom == i) {
-                glUniform1i(glGetUniformLocation(windowShader, "uUseTexture"), GL_TRUE);
+                glUniform1i(uUseTextureLoc, GL_TRUE);
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, characterTexture);
-                glUniform1i(glGetUniformLocation(windowShader, "uCharacterTexture"), 0);
+                glUniform1i(uCharacterTextureLoc, 0);
             }
             else {
-                glUniform1i(glGetUniformLocation(windowShader, "uUseTexture"), GL_FALSE);
+                glUniform1i(uUseTextureLoc, GL_FALSE);
             }
 
             glBindVertexArray(winVAOs[i]);
@@ -1322,8 +1343,8 @@ int main() {
 
 
         glUseProgram(dogShader);
-        glUniform2f(glGetUniformLocation(dogShader, "uPos"), dogX, dogY);
-        glUniform1i(glGetUniformLocation(dogShader, "uFlip"), dogGoingLeft);
+        glUniform2f(uPosLoc, dogX, dogY);
+        glUniform1i(uFlipLoc, dogGoingLeft);
         glBindVertexArray(dogVAO);
         glDrawArrays(GL_TRIANGLES, 0, 42);
         glBindVertexArray(0);
@@ -1331,8 +1352,8 @@ int main() {
 
         glUseProgram(smokeShader);
         float currentTime = glfwGetTime();
-        glUniform1f(glGetUniformLocation(smokeShader, "uTime"), currentTime);
-        glUniform2f(glGetUniformLocation(smokeShader, "uOrigin"), 0.125f, 0.33f);
+        glUniform1f(uTimeLocSmoke, currentTime);
+        glUniform2f(uOriginLocSmoke, 0.125f, 0.33f);
         glBindVertexArray(smokeVAO);
         glDrawArrays(GL_TRIANGLES, 0, 6);
         glBindVertexArray(0);
@@ -1344,22 +1365,20 @@ int main() {
 
         float dogTopY = dogY + (-0.55f); 
         float dogCenter = getDogCenter(dogX, dogGoingLeft);
-        float zInitialY = dogTopY + 0.05f; 
-
 
         glUseProgram(zShader);
-        glUniform1f(glGetUniformLocation(zShader, "uTime"), currentTime);
-        glUniform3f(glGetUniformLocation(zShader, "uColor"), 1.0f, 1.0f, 1.0f); // White color for "Z"
+        glUniform1f(uTimeLocZ, currentTime);
+        glUniform3f(uColorLocZ, 1.0f, 1.0f, 1.0f); 
 
         auto it = zLetters.begin();
         while (it != zLetters.end()) {
             float elapsed = currentTime - it->startTime;
-            if (elapsed > 2.0f) { // Duration of the "Z" effect
+            if (elapsed > 2.0f) { 
                 it = zLetters.erase(it);
             }
             else {
-                glUniform1f(glGetUniformLocation(zShader, "uStartTime"), it->startTime);
-                glUniform2f(glGetUniformLocation(zShader, "uOrigin"), dogCenter - it->xOffset, zInitialY);
+                glUniform1f(uStartTimeLocZ, it->startTime);
+                glUniform2f(uOriginLocZ, dogCenter - it->xOffset, dogTopY + 0.05);
 
                 glActiveTexture(GL_TEXTURE0);
                 glBindTexture(GL_TEXTURE_2D, Characters['Z'].TextureID);
@@ -1397,28 +1416,40 @@ int main() {
 
     glDeleteVertexArrays(1, &rectangleVAO);
     glDeleteBuffers(1, &rectangleVBO);
+
     glDeleteVertexArrays(1, &skyVAO);
     glDeleteBuffers(1, &skyVBO);
+
     glDeleteVertexArrays(1, &housebaseVAO);
     glDeleteBuffers(1, &housebaseVBO);
+
     glDeleteVertexArrays(1, &firstfloorVAO);
     glDeleteBuffers(1, &firstfloorVBO);
+
     glDeleteVertexArrays(1, &firstroofVAO);
     glDeleteBuffers(1, &firstroofVBO);
+
     glDeleteVertexArrays(1, &secondfloorVAO);
     glDeleteBuffers(1, &secondfloorVBO);
+
     glDeleteVertexArrays(1, &secondroofVAO);
     glDeleteBuffers(1, &secondroofVBO);
+
     glDeleteVertexArrays(1, &secondroofleftVAO);
     glDeleteBuffers(1, &secondroofleftVBO);
+
     glDeleteVertexArrays(1, &secondroofrightVAO);
     glDeleteBuffers(1, &secondroofrightVBO);
+
     glDeleteVertexArrays(1, &chimneyVAO);
     glDeleteBuffers(1, &chimneyVBO);
+
     glDeleteVertexArrays(1, &doorVAO);
     glDeleteBuffers(1, &doorVBO);
+
     glDeleteVertexArrays(1, &handleVAO);
     glDeleteBuffers(1, &handleVBO);
+
     glDeleteVertexArrays(1, &win1VAO);
     glDeleteBuffers(1, &win1VBO);
     glDeleteVertexArrays(1, &win2VAO);
@@ -1437,13 +1468,45 @@ int main() {
     glDeleteBuffers(1, &ellipseVBO);
     glDeleteVertexArrays(1, &win7VAO);
     glDeleteBuffers(1, &win7VBO);
+
     glDeleteVertexArrays(1, &doghousebaseVAO);
     glDeleteBuffers(1, &doghousebaseVBO);
+
     glDeleteVertexArrays(1, &doghouseroofVAO);
     glDeleteBuffers(1, &doghouseroofVBO);
+
     glDeleteVertexArrays(1, &dogVAO);
     glDeleteBuffers(1, &dogVBO);
+
+    glDeleteVertexArrays(1, &treebaseVAO);
+    glDeleteBuffers(1, &treebaseVBO);
+
+    glDeleteVertexArrays(1, &ellipseVAO);
+    glDeleteBuffers(1, &ellipseVBO);
+
+    glDeleteVertexArrays(1, &smokeVAO);
+    glDeleteBuffers(1, &smokeVBO);
+
+    glDeleteVertexArrays(1, &foodVAO);
+    glDeleteBuffers(1, &foodVBO);
+
+    glDeleteVertexArrays(1, &foodVAO);
+    glDeleteBuffers(1, &foodVBO);
+
+    glDeleteVertexArrays(1, &sunVAO);
+    glDeleteBuffers(1, &sunVBO);
+
+    glDeleteVertexArrays(1, &moonVAO);
+    glDeleteBuffers(1, &moonVBO);
+
     glDeleteProgram(shaderProgram);
+    glDeleteProgram(dogShader);
+    glDeleteProgram(zShader);
+    glDeleteProgram(sunShader);
+    glDeleteProgram(windowShader);
+    glDeleteProgram(windowShader);
+    glDeleteProgram(smokeShader);
+    glDeleteProgram(foodShader);
 
     glfwDestroyCursor(cursor);
     glfwDestroyWindow(window);
@@ -1590,23 +1653,6 @@ void updateTreeBaseColors(float* treeBase, unsigned int VBO, float paintProgress
 
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferSubData(GL_ARRAY_BUFFER, 0, sizeof(float) * 6 * 6, treeBase);
-}
-
-void updateSunMoonPositionOnToggle(bool isDay, float& sunX, float& sunY, float& moonX, float& moonY) {
-    float radius = 1.1f; // Circular orbit radius
-    if (isDay) {
-        sunX = 0.8f;
-        sunY = radius;
-        moonX = -0.8f;
-        moonY = -radius;
-    }
-    else {
-        // Moon at the top
-        sunX = 0.0f;
-        sunY = -radius;
-        moonX = 0.0f;
-        moonY = radius;
-    }
 }
 
 void calculateSunMoonPosition(float progress, float& sunX, float& sunY, float& moonX, float& moonY) {
