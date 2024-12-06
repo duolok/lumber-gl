@@ -251,6 +251,22 @@ int main() {
         -0.5f, -0.5f, 0.0f,   0.0f, 1.0f, 0.0f,
          0.5f, -0.5f, 0.0f,   0.0f, 0.0f, 1.0f,
     };
+    unsigned int triangleVAO, triangleVBO;
+    glGenVertexArrays(1, &triangleVAO);
+    glGenBuffers(1, &triangleVBO);
+
+    glBindVertexArray(triangleVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
 
     float sky[] = {
         -1.0f, 0.0f, 0.0f, 0.412f, 0.737f, 0.851f,
@@ -261,6 +277,21 @@ int main() {
         -1.0f, 1.0f, 0.0f, 0.412f, 0.737f, 0.851f,
         -1.0f, 0.0f, 0.0f, 0.412f, 0.737f, 0.851f,
     };
+    unsigned int skyVAO, skyVBO;
+    glGenVertexArrays(1, &skyVAO);
+    glGenBuffers(1, &skyVBO);
+
+    glBindVertexArray(skyVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(sky), sky, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
 
     float houseBase[] = {
         -0.3f, -0.5f , 0.0f,      0.196f, 0.204f, 0.22f,
@@ -271,6 +302,22 @@ int main() {
          0.3f, -0.45f, 0.0f,    0.196f, 0.204f, 0.22f,
         -0.3f, -0.45f, 0.0f,    0.196f, 0.204f, 0.22f,
     };
+    unsigned int housebaseVAO, housebaseVBO;
+    glGenVertexArrays(1, &housebaseVAO);
+    glGenBuffers(1, &housebaseVBO);
+
+    glBindVertexArray(housebaseVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, housebaseVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(houseBase), houseBase, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
 
     float firstFloor[] = {
         -0.28f, -0.45f, 0.0f,     0.51f, 0.604f, 0.8f,
@@ -281,6 +328,22 @@ int main() {
          0.28f,  -0.15f, 0.0f,    0.51f, 0.604f, 0.8f,
         -0.28f,  -0.15f, 0.0f,    0.51f, 0.604f, 0.8f,
     };
+    unsigned int firstfloorVAO, firstfloorVBO;
+    glGenVertexArrays(1, &firstfloorVAO);
+    glGenBuffers(1, &firstfloorVBO);
+
+    glBindVertexArray(firstfloorVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, firstfloorVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(firstFloor), firstFloor, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
 
     float door[] = {
         -0.03f, -0.45f, 0.0f,     1.0f, 1.0f, 1.0f,
@@ -291,6 +354,22 @@ int main() {
          0.03f,  -0.3f, 0.0f,    1.0f, 1.0f, 1.0f,
         -0.03f,  -0.3f, 0.0f,    1.0f, 1.0f, 1.0f,
     };
+    unsigned int doorVAO, doorVBO;
+    glGenVertexArrays(1, &doorVAO);
+    glGenBuffers(1, &doorVBO);
+
+    glBindVertexArray(doorVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, doorVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(door), door, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
 
     float win1[] = {
         -0.25f, -0.38f, 0.0f,     1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
@@ -361,520 +440,6 @@ int main() {
 			0.14f,  0.1f, 0.0f,      1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
 			0.08f,  0.1f, 0.0f,      1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
     };
-
-    float doorHandle[] = {
-        0.02f, -0.36f, 0.0f,   0.196f, 0.204f, 0.22f,
-        0.03f, -0.38f, 0.0f,     0.196f, 0.204f, 0.22f,
-        0.03f, -0.36f, 0.0f,     0.196f, 0.204f, 0.22f,
-    };
-
-
-    float firstRoof[] = {
-        -0.34f, -0.15f, 0.0f,      0.812f, 0.075f, 0.212f,
-         0.34f, -0.15f, 0.0f,      0.812f, 0.075f, 0.212f,
-         0.32f, -0.05f, 0.0f,      0.812f, 0.075f, 0.212f,
-
-        -0.34f, -0.15f, 0.0f,    0.812f, 0.075f, 0.212f,
-         0.32f, -0.05f, 0.0f,    0.812f, 0.075f, 0.212f,
-        -0.32f, -0.05f, 0.0f,    0.812f, 0.075f, 0.212f,
-    };
-
-    float secondFloor[] = {
-        -0.16f, -0.05f, 0.0f,     0.51f, 0.604f, 0.8f,
-         0.16f, -0.05f, 0.0f,     0.51f, 0.604f, 0.8f,
-         0.16f,  0.15f, 0.0f,      0.51f, 0.604f, 0.8f,
-
-        -0.16f, -0.05f, 0.0f,    0.51f, 0.604f, 0.8f,
-         0.16f,  0.15f, 0.0f,     0.51f, 0.604f, 0.8f,
-        -0.16f,  0.15f, 0.0f,     0.51f, 0.604f, 0.8f,
-    };
-
-
-    float secondFloorExtension[] = {
-        -0.16f,  0.15f, 0.0f,    0.51f, 0.604f, 0.8f,
-         0.16f,  0.15f, 0.0f,    0.51f, 0.604f, 0.8f,
-         0.0f,   0.3f,  0.0f,    0.51f, 0.604f, 0.8f,
-    };
-
-    float secondRoofLeft[] = {
-        -0.20f,  0.20f, 0.0f,      0.812f, 0.075f, 0.212f,
-         0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f,
-         0.0f,  0.39f,  0.0f,      0.812f, 0.075f, 0.212f,
-
-         0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f,
-        -0.16f,  0.15f, 0.0f,      0.812f, 0.075f, 0.212f,
-        -0.20f,  0.20f, 0.0f,      0.812f, 0.075f, 0.212f,
-    };
-
-    float secondRoofRight[] = {
-         0.20f,  0.20f, 0.0f,      0.812f, 0.075f, 0.212f,
-         0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f,
-         0.0f,  0.39f,  0.0f,      0.812f, 0.075f, 0.212f,
-
-         0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f,
-         0.16f,  0.15f, 0.0f,      0.812f, 0.075f, 0.212f,
-         0.20f,  0.20f, 0.0f,      0.812f, 0.075f, 0.212f,
-    };
-
-    float chimney[] = {
-        0.15f,  0.33f,    0.0f,       0.812f, 0.075f, 0.212f,
-        0.10f,  0.33f,   0.0f,       0.812f, 0.075f, 0.212f,
-        0.10f,  0.2475f,  0.0f,       0.812f, 0.075f, 0.212f,
-
-        0.10f,  0.295f,    0.0f,       0.812f, 0.075f, 0.212f,
-        0.15f,  0.2475f,    0.0f,       0.812f, 0.075f, 0.212f,
-        0.15f,  0.33f,   0.0f,       0.812f, 0.075f, 0.212f,
-    };
-
-    float chimneySmoke[] = {
-        0.24f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f,
-        0.24f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f,
-        0.13f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f,
-
-        0.13f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f,
-        0.13f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f,
-        0.24f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f,
-    };
-
-
-    float dogHouseBase[] = {
-       -0.95f, -0.75f , 0.0f,     0.278f, 0.204, 0.145f,
-       -0.8f, -0.75f , 0.0f,      0.278f, 0.204, 0.145f,
-       -0.8f, -0.55f, 0.0f,       0.278f, 0.204, 0.145f,
-       -0.95f, -0.75f , 0.0f,     0.278f, 0.204, 0.145f,
-       -0.8f, -0.55f, 0.0f,       0.278f, 0.204, 0.145f,
-      -0.95f, -0.55f, 0.0f,       0.278f, 0.204, 0.145f,
-    };
-
-    float treeBase[] = {
-        0.95f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
-        0.85f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
-        0.87f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
-
-        0.87f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
-        0.93f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
-        0.95f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
-    };
-
-    float dogHouseRoof[] = {
-        -0.96f, -0.55f, 0.0f,      0.812f, 0.075f, 0.212f,
-        -0.79f, -0.55f, 0.0f,      0.812f, 0.075f, 0.212f,
-        -0.79f, -0.45f, 0.0f,      0.812f, 0.075f, 0.212f,
-
-        -0.96f, -0.55f, 0.0f,    0.812f, 0.075f, 0.212f,
-        -0.79f, -0.45f, 0.0f,    0.812f, 0.075f, 0.212f,
-        -0.96f, -0.45f, 0.0f,    0.812f, 0.075f, 0.212f,
-    };
-
-    float ellipseVertices[(ELLIPSE_SEGMENTS + 2) * 6] = {};
-    float centerX = 0.9f;
-    float centerY = -0.1f;
-    float radiusX = 0.09f;
-    float radiusY = 0.4f;
-    float r = 0.192f, g = 0.42f, b = 0.161f;
-
-    // Add the center vertex first
-    ellipseVertices[0] = centerX;
-    ellipseVertices[1] = centerY;
-    ellipseVertices[2] = 0.0f;
-    ellipseVertices[3] = r;
-    ellipseVertices[4] = g;
-    ellipseVertices[5] = b;
-
-    for (int i = 0; i <= ELLIPSE_SEGMENTS; ++i) {
-        float theta = 2.0f * M_PI * float(i) / float(ELLIPSE_SEGMENTS);
-
-        ellipseVertices[(i + 1) * 6] = centerX + radiusX * cos(theta);
-        ellipseVertices[(i + 1) * 6 + 1] = centerY + radiusY * sin(theta);
-        ellipseVertices[(i + 1) * 6 + 2] = 0.0f;
-        ellipseVertices[(i + 1) * 6 + 3] = r;
-        ellipseVertices[(i + 1) * 6 + 4] = g;
-        ellipseVertices[(i + 1) * 6 + 5] = b;
-    }
-
-
-    float dog[] = {
-        // left leg
-        -0.7f, -0.78f, 0.0f,      0.82f, 0.604f, 0.272f,
-        -0.68f, -0.78f, 0.0f,     0.82f, 0.604f, 0.272f,
-        -0.68f, -0.68f, 0.0f,     0.82f, 0.604f, 0.272f,
-
-        -0.7f,  -0.78f, 0.0f,    0.82f, 0.604, 0.272f,
-        -0.68f, -0.68f, 0.0f,    0.82f, 0.604f, 0.272f,
-        -0.7f,  -0.68f, 0.0f,    0.82f, 0.604f, 0.272f,
-
-        // right leg
-        -0.62f, -0.78f, 0.0f,      0.82f, 0.604f, 0.272f,
-        -0.60f, -0.78f, 0.0f,     0.82f, 0.604f, 0.272f,
-        -0.60f, -0.68f, 0.0f,     0.82f, 0.604f, 0.272f,
-
-        -0.62f,  -0.78f, 0.0f,    0.82f, 0.604, 0.272f,
-        -0.60f, -0.68f, 0.0f,    0.82f, 0.604f, 0.272f,
-        -0.62f,  -0.68f, 0.0f,    0.82f, 0.604f, 0.272f,
-
-        // body
-        -0.72f,  -0.68f, 0.0f,    0.82f, 0.604, 0.272f,
-        -0.58f,  -0.68f,  0.0f,   0.82f, 0.604f, 0.272f,
-        -0.58f,  -0.58f, 0.0f,    0.82f, 0.604f, 0.272f,
-
-        -0.72f,  -0.68f, 0.0f,    0.82f, 0.604, 0.272f,
-        -0.58f,  -0.58f,  0.0f,   0.82f, 0.604f, 0.272f,
-        -0.72f,  -0.58f, 0.0f,    0.82f, 0.604f, 0.272f,
-
-        // tail
-        -0.72f,  -0.58f, 0.0f,    0.82f, 0.604f, 0.272f,
-        -0.72f,  -0.61f, 0.0f,    0.82f, 0.604, 0.272f,
-        -0.74f,  -0.70f, 0.0f,    0.82f, 0.604, 0.272f,
-
-        -0.74f,  -0.70f, 0.0f,    0.82f, 0.604, 0.272f,
-        -0.75f,  -0.69f, 0.0f,    0.82f, 0.604, 0.272f,
-        -0.72f,  -0.58f, 0.0f,    0.82f, 0.604f, 0.272f,
-
-        // head
-        -0.58f,  -0.55f, 0.0f,    0.82f, 0.604f, 0.272f,
-        -0.58f,  -0.60f,  0.0f,   0.82f, 0.604f, 0.272f,
-        -0.54f,  -0.60f,  0.0f,   0.82f, 0.604f, 0.272f,
-
-        -0.54f,  -0.60f,  0.0f,   0.82f, 0.604f, 0.272f,
-        -0.54f,  -0.55f, 0.0f,    0.82f, 0.604f, 0.272f,
-        -0.58f,  -0.55f,  0.0f,   0.82f, 0.604f, 0.272f,
-
-        // ear
-        -0.58f,  -0.55f,  0.0f,   0.82f, 0.604f, 0.272f,
-        -0.58f,  -0.54f,  0.0f,   0.82f, 0.604f, 0.272f,
-        -0.57f,  -0.55f,  0.0f,   0.82f, 0.604f, 0.272f,
-
-        // eye
-        -0.57f,  -0.57f,  0.0f,    0.0f, 0.0f, 0.0f,
-        -0.57f,  -0.58f,  0.0f,   0.0f, 0.0f, 0.0f,
-        -0.56f,  -0.58f,  0.0f,   0.0f, 0.0f, 0.0f,
-
-        -0.57f,  -0.57f,  0.0f,    0.0f, 0.0f, 0.0f,
-        -0.56f,  -0.58f,  0.0f,   0.0f, 0.0f, 0.0f,
-        -0.56f,  -0.57f,  0.0f,   0.0f, 0.0f, 0.0f,
-
-        //tongue
-        -0.542f,  -0.595f,  0.0f,   0.949f, 0.749f, 0.941f,
-        -0.538f,  -0.595f,  0.0f,   0.949f, 0.749f, 0.941f,
-        -0.538f,  -0.618f,  0.0f,   0.949f, 0.749f, 0.941f,
-    };
-
-    float foodVertices[] = {
-        // positions           // colors
-        -0.01f, -0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // bottom left
-         0.01f, -0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // bottom right
-         0.01f,  0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // top right
-
-        -0.01f, -0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // bottom left
-         0.01f,  0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // top right
-        -0.01f,  0.015f, 0.0f,   1.0f, 0.5f, 0.0f  // top left
-    };
-
-
-    float zVerticies[] = {
-            -0.05f,  0.0f, 0.0f,   0.0f, 0.0f, // bottom left
-			 0.05f,  0.0f, 0.0f,   1.0f, 0.0f, // bottom right
-			 0.05f,  0.1f, 0.0f,   1.0f, 1.0f, // top right
-
-			-0.05f,  0.0f, 0.0f,   0.0f, 0.0f, // bottom left
-			 0.05f,  0.1f, 0.0f,   1.0f, 1.0f, // top right
-			-0.05f,  0.1f, 0.0f,   0.0f, 1.0f  // top left
-    };
-
-    unsigned int zVAO, zVBO;
-    glGenVertexArrays(1, &zVAO);
-    glGenBuffers(1, &zVBO);
-
-    glBindVertexArray(zVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, zVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(zVerticies), zVerticies, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0); 
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float))); 
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-    unsigned int dogVAO, dogVBO;
-    glGenVertexArrays(1, &dogVAO);
-    glGenBuffers(1, &dogVBO);
-
-    glBindVertexArray(dogVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, dogVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(dog), dog, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-    float rectangleVertices[] = {
-        -1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f,
-         1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f,
-         1.0f, -0.8f, 0.0f,   1.0f, 1.0f, 1.0f,
-
-        -1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f,
-         1.0f, -0.8f, 0.0f,   1.0f, 1.0f, 1.0f,
-        -1.0f, -0.8f, 0.0f,   1.0f, 1.0f, 1.0f
-    };
-
-
-    float sunVertices[(ELLIPSE_SEGMENTS + 2) * 6];
-    float moonVertices[(ELLIPSE_SEGMENTS + 2) * 6];
-    float sunColor[3] = { 1.0f, 1.0f, 0.0f };
-    float moonColor[3] = { 0.8f, 0.8f, 0.8f };
-
-    unsigned int sunVAO, sunVBO;
-    unsigned int moonVAO, moonVBO;
-
-    // Generate and bind buffers for sun
-    glGenVertexArrays(1, &sunVAO);
-    glGenBuffers(1, &sunVBO);
-    glBindVertexArray(sunVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, sunVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(sunVertices), sunVertices, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    // Generate and bind buffers for moon
-    glGenVertexArrays(1, &moonVAO);
-    glGenBuffers(1, &moonVBO);
-    glBindVertexArray(moonVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, moonVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(moonVertices), moonVertices, GL_DYNAMIC_DRAW);
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    unsigned int triangleVAO, triangleVBO;
-    glGenVertexArrays(1, &triangleVAO);
-    glGenBuffers(1, &triangleVBO);
-
-    glBindVertexArray(triangleVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, triangleVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangleVertices), triangleVertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-    // Setup rectangle VAO and VBO
-    unsigned int rectangleVAO, rectangleVBO;
-    glGenVertexArrays(1, &rectangleVAO);
-    glGenBuffers(1, &rectangleVBO);
-
-    glBindVertexArray(rectangleVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, rectangleVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVertices), rectangleVertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-    // housebase
-    unsigned int housebaseVAO, housebaseVBO;
-    glGenVertexArrays(1, &housebaseVAO);
-    glGenBuffers(1, &housebaseVBO);
-
-    glBindVertexArray(housebaseVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, housebaseVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(houseBase), houseBase, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-    // first Floor
-    unsigned int firstfloorVAO, firstfloorVBO;
-    glGenVertexArrays(1, &firstfloorVAO);
-    glGenBuffers(1, &firstfloorVBO);
-
-    glBindVertexArray(firstfloorVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, firstfloorVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(firstFloor), firstFloor, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-    // first roof
-    unsigned int firstroofVAO, firstroofVBO;
-    glGenVertexArrays(1, &firstroofVAO);
-    glGenBuffers(1, &firstroofVBO);
-
-    glBindVertexArray(firstroofVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, firstroofVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(firstRoof), firstRoof, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-
-    // second floor
-    unsigned int secondfloorVAO, secondfloorVBO;
-    glGenVertexArrays(1, &secondfloorVAO);
-    glGenBuffers(1, &secondfloorVBO);
-
-    glBindVertexArray(secondfloorVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, secondfloorVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(secondFloor), secondFloor, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-
-    // second floor extension
-    unsigned int secondroofVAO, secondroofVBO;
-    glGenVertexArrays(1, &secondroofVAO);
-    glGenBuffers(1, &secondroofVBO);
-
-    glBindVertexArray(secondroofVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, secondroofVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(secondFloorExtension), secondFloorExtension, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-    // Second Roof Left
-    unsigned int secondroofleftVAO, secondroofleftVBO;
-    glGenVertexArrays(1, &secondroofleftVAO);
-    glGenBuffers(1, &secondroofleftVBO);
-
-    glBindVertexArray(secondroofleftVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, secondroofleftVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(secondRoofLeft), secondRoofLeft, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-    // Second Roof Right
-    unsigned int secondroofrightVAO, secondroofrightVBO;
-    glGenVertexArrays(1, &secondroofrightVAO);
-    glGenBuffers(1, &secondroofrightVBO);
-
-    glBindVertexArray(secondroofrightVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, secondroofrightVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(secondRoofRight), secondRoofRight, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-    // Chimney
-    unsigned int chimneyVAO, chimneyVBO;
-    glGenVertexArrays(1, &chimneyVAO);
-    glGenBuffers(1, &chimneyVBO);
-
-    glBindVertexArray(chimneyVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, chimneyVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(chimney), chimney, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-
-    // Door
-    unsigned int doorVAO, doorVBO;
-    glGenVertexArrays(1, &doorVAO);
-    glGenBuffers(1, &doorVBO);
-
-    glBindVertexArray(doorVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, doorVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(door), door, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-
-    // Door
-    unsigned int handleVAO, handleVBO;
-    glGenVertexArrays(1, &handleVAO);
-    glGenBuffers(1, &handleVBO);
-
-    glBindVertexArray(handleVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, handleVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(doorHandle), doorHandle, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
-    // windows
     unsigned int win1VAO, win1VBO;
     glGenVertexArrays(1, &win1VAO);
     glGenBuffers(1, &win1VBO);
@@ -1031,6 +596,214 @@ int main() {
         win7VAO,
     };
 
+    float doorHandle[] = {
+        0.02f, -0.36f, 0.0f,   0.196f, 0.204f, 0.22f,
+        0.03f, -0.38f, 0.0f,     0.196f, 0.204f, 0.22f,
+        0.03f, -0.36f, 0.0f,     0.196f, 0.204f, 0.22f,
+    };
+    unsigned int handleVAO, handleVBO;
+    glGenVertexArrays(1, &handleVAO);
+    glGenBuffers(1, &handleVBO);
+
+    glBindVertexArray(handleVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, handleVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(doorHandle), doorHandle, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+
+    float firstRoof[] = {
+        -0.34f, -0.15f, 0.0f,      0.812f, 0.075f, 0.212f,
+         0.34f, -0.15f, 0.0f,      0.812f, 0.075f, 0.212f,
+         0.32f, -0.05f, 0.0f,      0.812f, 0.075f, 0.212f,
+
+        -0.34f, -0.15f, 0.0f,    0.812f, 0.075f, 0.212f,
+         0.32f, -0.05f, 0.0f,    0.812f, 0.075f, 0.212f,
+        -0.32f, -0.05f, 0.0f,    0.812f, 0.075f, 0.212f,
+    };
+    unsigned int firstroofVAO, firstroofVBO;
+    glGenVertexArrays(1, &firstroofVAO);
+    glGenBuffers(1, &firstroofVBO);
+
+    glBindVertexArray(firstroofVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, firstroofVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(firstRoof), firstRoof, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+    float secondFloor[] = {
+        -0.16f, -0.05f, 0.0f,     0.51f, 0.604f, 0.8f,
+         0.16f, -0.05f, 0.0f,     0.51f, 0.604f, 0.8f,
+         0.16f,  0.15f, 0.0f,      0.51f, 0.604f, 0.8f,
+
+        -0.16f, -0.05f, 0.0f,    0.51f, 0.604f, 0.8f,
+         0.16f,  0.15f, 0.0f,     0.51f, 0.604f, 0.8f,
+        -0.16f,  0.15f, 0.0f,     0.51f, 0.604f, 0.8f,
+    };
+    unsigned int secondfloorVAO, secondfloorVBO;
+    glGenVertexArrays(1, &secondfloorVAO);
+    glGenBuffers(1, &secondfloorVBO);
+
+    glBindVertexArray(secondfloorVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, secondfloorVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(secondFloor), secondFloor, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+
+    float secondFloorExtension[] = {
+        -0.16f,  0.15f, 0.0f,    0.51f, 0.604f, 0.8f,
+         0.16f,  0.15f, 0.0f,    0.51f, 0.604f, 0.8f,
+         0.0f,   0.3f,  0.0f,    0.51f, 0.604f, 0.8f,
+    };
+    unsigned int secondroofVAO, secondroofVBO;
+    glGenVertexArrays(1, &secondroofVAO);
+    glGenBuffers(1, &secondroofVBO);
+
+    glBindVertexArray(secondroofVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, secondroofVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(secondFloorExtension), secondFloorExtension, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+    float secondRoofLeft[] = {
+        -0.20f,  0.20f, 0.0f,      0.812f, 0.075f, 0.212f,
+         0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f,
+         0.0f,  0.39f,  0.0f,      0.812f, 0.075f, 0.212f,
+
+         0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f,
+        -0.16f,  0.15f, 0.0f,      0.812f, 0.075f, 0.212f,
+        -0.20f,  0.20f, 0.0f,      0.812f, 0.075f, 0.212f,
+    };
+    unsigned int secondroofleftVAO, secondroofleftVBO;
+    glGenVertexArrays(1, &secondroofleftVAO);
+    glGenBuffers(1, &secondroofleftVBO);
+
+    glBindVertexArray(secondroofleftVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, secondroofleftVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(secondRoofLeft), secondRoofLeft, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+    float secondRoofRight[] = {
+         0.20f,  0.20f, 0.0f,      0.812f, 0.075f, 0.212f,
+         0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f,
+         0.0f,  0.39f,  0.0f,      0.812f, 0.075f, 0.212f,
+
+         0.0f,  0.3f,  0.0f,       0.812f, 0.075f, 0.212f,
+         0.16f,  0.15f, 0.0f,      0.812f, 0.075f, 0.212f,
+         0.20f,  0.20f, 0.0f,      0.812f, 0.075f, 0.212f,
+    };
+    unsigned int secondroofrightVAO, secondroofrightVBO;
+    glGenVertexArrays(1, &secondroofrightVAO);
+    glGenBuffers(1, &secondroofrightVBO);
+
+    glBindVertexArray(secondroofrightVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, secondroofrightVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(secondRoofRight), secondRoofRight, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+    float chimney[] = {
+        0.15f,  0.33f,    0.0f,       0.812f, 0.075f, 0.212f,
+        0.10f,  0.33f,   0.0f,       0.812f, 0.075f, 0.212f,
+        0.10f,  0.2475f,  0.0f,       0.812f, 0.075f, 0.212f,
+
+        0.10f,  0.295f,    0.0f,       0.812f, 0.075f, 0.212f,
+        0.15f,  0.2475f,    0.0f,       0.812f, 0.075f, 0.212f,
+        0.15f,  0.33f,   0.0f,       0.812f, 0.075f, 0.212f,
+    };
+    unsigned int chimneyVAO, chimneyVBO;
+    glGenVertexArrays(1, &chimneyVAO);
+    glGenBuffers(1, &chimneyVBO);
+
+    glBindVertexArray(chimneyVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, chimneyVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(chimney), chimney, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+    float chimneySmoke[] = {
+        0.24f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f,
+        0.24f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f,
+        0.13f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f,
+
+        0.13f, 0.40f, 0.0f,          0.341f, 0.341f, 0.341f,
+        0.13f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f,
+        0.24f, 0.70f, 0.0f,          0.341f, 0.341f, 0.341f,
+    };
+    unsigned int smokeVAO, smokeVBO;
+    glGenVertexArrays(1, &smokeVAO);
+    glGenBuffers(1, &smokeVBO);
+
+    glBindVertexArray(smokeVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, smokeVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(chimneySmoke), chimneySmoke, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+    float dogHouseBase[] = {
+       -0.95f, -0.75f , 0.0f,     0.278f, 0.204, 0.145f,
+       -0.8f, -0.75f , 0.0f,      0.278f, 0.204, 0.145f,
+       -0.8f, -0.55f, 0.0f,       0.278f, 0.204, 0.145f,
+       -0.95f, -0.75f , 0.0f,     0.278f, 0.204, 0.145f,
+       -0.8f, -0.55f, 0.0f,       0.278f, 0.204, 0.145f,
+      -0.95f, -0.55f, 0.0f,       0.278f, 0.204, 0.145f,
+    };
     unsigned int doghousebaseVAO, doghousebaseVBO;
     glGenVertexArrays(1, &doghousebaseVAO);
     glGenBuffers(1, &doghousebaseVBO);
@@ -1048,24 +821,15 @@ int main() {
 
     glBindVertexArray(0);
 
+    float treeBase[] = {
+        0.95f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
+        0.85f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
+        0.87f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
 
-    unsigned int doghouseroofVAO, doghouseroofVBO;
-    glGenVertexArrays(1, &doghouseroofVAO);
-    glGenBuffers(1, &doghouseroofVBO);
-
-    glBindVertexArray(doghouseroofVAO);
-
-    glBindBuffer(GL_ARRAY_BUFFER, doghouseroofVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(dogHouseRoof), dogHouseRoof, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
-    glBindVertexArray(0);
-
+        0.87f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
+        0.93f, -0.45f, 0.0f,      0.22f, 0.169f, 0.1f,
+        0.95f, -0.75f, 0.0f,      0.22f, 0.169f, 0.1f,
+    };
     unsigned int treebaseVAO, treebaseVBO;
     glGenVertexArrays(1, &treebaseVAO);
     glGenBuffers(1, &treebaseVBO);
@@ -1083,6 +847,58 @@ int main() {
 
     glBindVertexArray(0);
 
+    float dogHouseRoof[] = {
+        -0.96f, -0.55f, 0.0f,      0.812f, 0.075f, 0.212f,
+        -0.79f, -0.55f, 0.0f,      0.812f, 0.075f, 0.212f,
+        -0.79f, -0.45f, 0.0f,      0.812f, 0.075f, 0.212f,
+
+        -0.96f, -0.55f, 0.0f,    0.812f, 0.075f, 0.212f,
+        -0.79f, -0.45f, 0.0f,    0.812f, 0.075f, 0.212f,
+        -0.96f, -0.45f, 0.0f,    0.812f, 0.075f, 0.212f,
+    };
+    unsigned int doghouseroofVAO, doghouseroofVBO;
+    glGenVertexArrays(1, &doghouseroofVAO);
+    glGenBuffers(1, &doghouseroofVBO);
+
+    glBindVertexArray(doghouseroofVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, doghouseroofVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(dogHouseRoof), dogHouseRoof, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+    float ellipseVertices[(ELLIPSE_SEGMENTS + 2) * 6] = {};
+    float centerX = 0.9f;
+    float centerY = -0.1f;
+    float radiusX = 0.09f;
+    float radiusY = 0.4f;
+    float r = 0.192f, g = 0.42f, b = 0.161f;
+
+    // Add the center vertex first
+    ellipseVertices[0] = centerX;
+    ellipseVertices[1] = centerY;
+    ellipseVertices[2] = 0.0f;
+    ellipseVertices[3] = r;
+    ellipseVertices[4] = g;
+    ellipseVertices[5] = b;
+
+    for (int i = 0; i <= ELLIPSE_SEGMENTS; ++i) {
+        float theta = 2.0f * M_PI * float(i) / float(ELLIPSE_SEGMENTS);
+
+        ellipseVertices[(i + 1) * 6] = centerX + radiusX * cos(theta);
+        ellipseVertices[(i + 1) * 6 + 1] = centerY + radiusY * sin(theta);
+        ellipseVertices[(i + 1) * 6 + 2] = 0.0f;
+        ellipseVertices[(i + 1) * 6 + 3] = r;
+        ellipseVertices[(i + 1) * 6 + 4] = g;
+        ellipseVertices[(i + 1) * 6 + 5] = b;
+    }
+
     unsigned int ellipseVAO, ellipseVBO;
     glGenVertexArrays(1, &ellipseVAO);
     glGenBuffers(1, &ellipseVBO);
@@ -1099,13 +915,80 @@ int main() {
 
     glBindVertexArray(0);
 
-    unsigned int smokeVAO, smokeVBO;
-    glGenVertexArrays(1, &smokeVAO);
-    glGenBuffers(1, &smokeVBO);
 
-    glBindVertexArray(smokeVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, smokeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(chimneySmoke), chimneySmoke, GL_STATIC_DRAW);
+    float dog[] = {
+        // left leg
+        -0.7f, -0.78f, 0.0f,      0.82f, 0.604f, 0.272f,
+        -0.68f, -0.78f, 0.0f,     0.82f, 0.604f, 0.272f,
+        -0.68f, -0.68f, 0.0f,     0.82f, 0.604f, 0.272f,
+
+        -0.7f,  -0.78f, 0.0f,    0.82f, 0.604, 0.272f,
+        -0.68f, -0.68f, 0.0f,    0.82f, 0.604f, 0.272f,
+        -0.7f,  -0.68f, 0.0f,    0.82f, 0.604f, 0.272f,
+
+        // right leg
+        -0.62f, -0.78f, 0.0f,      0.82f, 0.604f, 0.272f,
+        -0.60f, -0.78f, 0.0f,     0.82f, 0.604f, 0.272f,
+        -0.60f, -0.68f, 0.0f,     0.82f, 0.604f, 0.272f,
+
+        -0.62f,  -0.78f, 0.0f,    0.82f, 0.604, 0.272f,
+        -0.60f, -0.68f, 0.0f,    0.82f, 0.604f, 0.272f,
+        -0.62f,  -0.68f, 0.0f,    0.82f, 0.604f, 0.272f,
+
+        // body
+        -0.72f,  -0.68f, 0.0f,    0.82f, 0.604, 0.272f,
+        -0.58f,  -0.68f,  0.0f,   0.82f, 0.604f, 0.272f,
+        -0.58f,  -0.58f, 0.0f,    0.82f, 0.604f, 0.272f,
+
+        -0.72f,  -0.68f, 0.0f,    0.82f, 0.604, 0.272f,
+        -0.58f,  -0.58f,  0.0f,   0.82f, 0.604f, 0.272f,
+        -0.72f,  -0.58f, 0.0f,    0.82f, 0.604f, 0.272f,
+
+        // tail
+        -0.72f,  -0.58f, 0.0f,    0.82f, 0.604f, 0.272f,
+        -0.72f,  -0.61f, 0.0f,    0.82f, 0.604, 0.272f,
+        -0.74f,  -0.70f, 0.0f,    0.82f, 0.604, 0.272f,
+
+        -0.74f,  -0.70f, 0.0f,    0.82f, 0.604, 0.272f,
+        -0.75f,  -0.69f, 0.0f,    0.82f, 0.604, 0.272f,
+        -0.72f,  -0.58f, 0.0f,    0.82f, 0.604f, 0.272f,
+
+        // head
+        -0.58f,  -0.55f, 0.0f,    0.82f, 0.604f, 0.272f,
+        -0.58f,  -0.60f,  0.0f,   0.82f, 0.604f, 0.272f,
+        -0.54f,  -0.60f,  0.0f,   0.82f, 0.604f, 0.272f,
+
+        -0.54f,  -0.60f,  0.0f,   0.82f, 0.604f, 0.272f,
+        -0.54f,  -0.55f, 0.0f,    0.82f, 0.604f, 0.272f,
+        -0.58f,  -0.55f,  0.0f,   0.82f, 0.604f, 0.272f,
+
+        // ear
+        -0.58f,  -0.55f,  0.0f,   0.82f, 0.604f, 0.272f,
+        -0.58f,  -0.54f,  0.0f,   0.82f, 0.604f, 0.272f,
+        -0.57f,  -0.55f,  0.0f,   0.82f, 0.604f, 0.272f,
+
+        // eye
+        -0.57f,  -0.57f,  0.0f,    0.0f, 0.0f, 0.0f,
+        -0.57f,  -0.58f,  0.0f,   0.0f, 0.0f, 0.0f,
+        -0.56f,  -0.58f,  0.0f,   0.0f, 0.0f, 0.0f,
+
+        -0.57f,  -0.57f,  0.0f,    0.0f, 0.0f, 0.0f,
+        -0.56f,  -0.58f,  0.0f,   0.0f, 0.0f, 0.0f,
+        -0.56f,  -0.57f,  0.0f,   0.0f, 0.0f, 0.0f,
+
+        //tongue
+        -0.542f,  -0.595f,  0.0f,   0.949f, 0.749f, 0.941f,
+        -0.538f,  -0.595f,  0.0f,   0.949f, 0.749f, 0.941f,
+        -0.538f,  -0.618f,  0.0f,   0.949f, 0.749f, 0.941f,
+    };
+    unsigned int dogVAO, dogVBO;
+    glGenVertexArrays(1, &dogVAO);
+    glGenBuffers(1, &dogVBO);
+
+    glBindVertexArray(dogVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, dogVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(dog), dog, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
@@ -1115,6 +998,16 @@ int main() {
 
     glBindVertexArray(0);
 
+    float foodVertices[] = {
+        // positions           // colors
+        -0.01f, -0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // bottom left
+         0.01f, -0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // bottom right
+         0.01f,  0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // top right
+
+        -0.01f, -0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // bottom left
+         0.01f,  0.015f, 0.0f,   1.0f, 0.5f, 0.0f, // top right
+        -0.01f,  0.015f, 0.0f,   1.0f, 0.5f, 0.0f  // top left
+    };
     unsigned int foodVAO, foodVBO;
     glGenVertexArrays(1, &foodVAO);
     glGenBuffers(1, &foodVBO);
@@ -1133,14 +1026,49 @@ int main() {
     glBindVertexArray(0);
 
 
+    float zVerticies[] = {
+            -0.05f,  0.0f, 0.0f,   0.0f, 0.0f, 
+			 0.05f,  0.0f, 0.0f,   1.0f, 0.0f, 
+			 0.05f,  0.1f, 0.0f,   1.0f, 1.0f, 
 
-    unsigned int skyVAO, skyVBO;
-    glGenVertexArrays(1, &skyVAO);
-    glGenBuffers(1, &skyVBO);
+			-0.05f,  0.0f, 0.0f,   0.0f, 0.0f, 
+			 0.05f,  0.1f, 0.0f,   1.0f, 1.0f, 
+			-0.05f,  0.1f, 0.0f,   0.0f, 1.0f  
+    };
+    unsigned int zVAO, zVBO;
+    glGenVertexArrays(1, &zVAO);
+    glGenBuffers(1, &zVBO);
 
-    glBindVertexArray(skyVAO);
-    glBindBuffer(GL_ARRAY_BUFFER, skyVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(sky), sky, GL_STATIC_DRAW);
+    glBindVertexArray(zVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, zVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(zVerticies), zVerticies, GL_STATIC_DRAW);
+
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0); 
+    glEnableVertexAttribArray(0);
+
+    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float))); 
+    glEnableVertexAttribArray(1);
+
+    glBindVertexArray(0);
+
+    float rectangleVertices[] = {
+        -1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f,
+         1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f,
+         1.0f, -0.8f, 0.0f,   1.0f, 1.0f, 1.0f,
+
+        -1.0f, -1.0f, 0.0f,   1.0f, 1.0f, 1.0f,
+         1.0f, -0.8f, 0.0f,   1.0f, 1.0f, 1.0f,
+        -1.0f, -0.8f, 0.0f,   1.0f, 1.0f, 1.0f
+    };
+    unsigned int rectangleVAO, rectangleVBO;
+    glGenVertexArrays(1, &rectangleVAO);
+    glGenBuffers(1, &rectangleVBO);
+
+    glBindVertexArray(rectangleVAO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, rectangleVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(rectangleVertices), rectangleVertices, GL_STATIC_DRAW);
 
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
@@ -1151,6 +1079,36 @@ int main() {
     glBindVertexArray(0);
 
 
+    float sunVertices[(ELLIPSE_SEGMENTS + 2) * 6];
+    float moonVertices[(ELLIPSE_SEGMENTS + 2) * 6];
+    float sunColor[3] = { 1.0f, 1.0f, 0.0f };
+    float moonColor[3] = { 0.8f, 0.8f, 0.8f };
+
+    unsigned int sunVAO, sunVBO;
+    unsigned int moonVAO, moonVBO;
+
+    glGenVertexArrays(1, &sunVAO);
+    glGenBuffers(1, &sunVBO);
+    glBindVertexArray(sunVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, sunVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(sunVertices), sunVertices, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+    glGenVertexArrays(1, &moonVAO);
+    glGenBuffers(1, &moonVBO);
+    glBindVertexArray(moonVAO);
+    glBindBuffer(GL_ARRAY_BUFFER, moonVBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(moonVertices), moonVertices, GL_DYNAMIC_DRAW);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
+
+
+    // text VAO is global scope
     glGenVertexArrays(1, &textVAO);
     glGenBuffers(1, &textVBO);
 
