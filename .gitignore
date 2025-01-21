@@ -4,3 +4,5 @@ packages/*
 x64/*
 .idea/*
 opengl-template/*
+*.o
+lumber_gl
